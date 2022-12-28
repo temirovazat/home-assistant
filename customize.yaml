@@ -1,0 +1,19 @@
+cover.keuken_rolgordijnen:
+  device_class: blind
+cover.slaapkamer_rolgordijnen:
+  device_class: blind
+climate.woonkamer_centrale_verwarming:
+  friendly_name: Centrale Verwarming
+  icon: mdi:thermostat
+sensor.samba_backup:
+  icon: mdi:archive-arrow-up
+device_tracker.shanna:
+  icon: mdi:account-search
+device_tracker.gabriel:
+  icon: mdi:account-search
+device_tracker.zora:
+  icon: mdi:account-search
+  
+#Hue Synx Box for HomeKit
+media_player.play_sync_box:
+  device_class: tv

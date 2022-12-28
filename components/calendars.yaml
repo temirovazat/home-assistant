@@ -1,0 +1,74 @@
+# █ █ █ █ █▀▀ #
+# █▀█ ▀▄▀ █▄▄ #
+
+  - platform: entities_calendar
+    calendars:
+        # HVC Papier
+      - name: '01 HVC afvalkalender Papier'
+        entities:
+          - entity: sensor.hvc_papier
+            name: HVC Papier
+            start_time:
+              timestamp_in_state: true
+            end_time:
+              timestamp_in_state: true
+
+        #HVC PMD
+      - name: '04 HVC afvalkalender PMD'
+        entities:
+          - entity: sensor.hvc_pmd
+            name: HVC PMD
+            start_time:
+              timestamp_in_state: true
+            end_time:
+              timestamp_in_state: true
+
+        # HVC GFT
+      - name: '07 HVC afvalkalender GFT'
+        entities:
+          - entity: sensor.hvc_gft
+            name: HVC GFT
+            start_time:
+              timestamp_in_state: true
+            end_time:
+              timestamp_in_state: true
+
+# █▀▄ █ █ █▀▄▀█ █▀▄▀█ █▄█ #
+# █▄▀ █▄█ █ ▀ █ █ ▀ █  █  #
+
+# Below are dummy calendar entities as to get the right color for the HVC calendar entities
+      - name: '02'
+        entities:
+          - entity: script.dummy
+            name: Dummy calendar 02
+            start_time:
+              timestamp_in_state: true
+            end_time:
+              timestamp_in_state: true
+
+      - name: '03'
+        entities:
+          - entity: script.dummy
+            name: Dummy calendar 03
+            start_time:
+              timestamp_in_state: true
+            end_time:
+              timestamp_in_state: true
+
+      - name: '05'
+        entities:
+          - entity: script.dummy
+            name: Dummy calendar 05
+            start_time:
+              timestamp_in_state: true
+            end_time:
+              timestamp_in_state: true
+
+      - name: '06'
+        entities:
+          - entity: script.dummy
+            name: Dummy calendar 06
+            start_time:
+              timestamp_attribute: next_trigger
+            end_time:
+              timestamp_attribute: next_trigger

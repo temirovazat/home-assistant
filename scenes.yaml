@@ -1,0 +1,392 @@
+- id: '1610315133223'
+  name: Woonkamer - Lounge
+  entities:
+    light.woonkamer_groep:
+      min_mireds: 140
+      max_mireds: 650
+      effect_list:
+      - colorloop
+      supported_color_modes:
+      - brightness
+      - color_temp
+      - hs
+      color_mode: color_temp
+      brightness: 67
+      color_temp: 421
+      entity_id:
+      - light.woonkamer_hektar_lamp
+      - light.woonkamer_lamp
+      - light.woonkamer_eettafel_lamp
+      - light.globe_lamp
+      - light.edison_lamp
+      - light.wiz_tunable_e14
+      - light.play_lichtbalk_l
+      - light.play_lichtbalk_m
+      - light.play_lichtbalk_r
+      friendly_name: Woonkamer Groep
+      icon: mdi:lightbulb-group
+      supported_features: 44
+      state: 'on'
+    switch.begane_grond_adaptive_lighting:
+      friendly_name: Begane Grond - Adaptive Lighting
+      icon: mdi:weather-sunset
+      state: 'off'
+- id: '1610315145487'
+  name: Woonkamer - Visite
+  entities:
+    light.woonkamer_groep:
+      min_mireds: 140
+      max_mireds: 650
+      effect_list:
+      - colorloop
+      supported_color_modes:
+      - brightness
+      - color_temp
+      - hs
+      color_mode: color_temp
+      brightness: 183
+      color_temp: 247
+      entity_id:
+      - light.woonkamer_hektar_lamp
+      - light.woonkamer_lamp
+      - light.woonkamer_eettafel_lamp
+      - light.globe_lamp
+      - light.edison_lamp
+      - light.wiz_tunable_e14
+      - light.play_lichtbalk_l
+      - light.play_lichtbalk_m
+      - light.play_lichtbalk_r
+      friendly_name: Woonkamer Groep
+      icon: mdi:lightbulb-group
+      supported_features: 44
+      state: 'on'
+    switch.begane_grond_adaptive_lighting:
+      friendly_name: Begane Grond - Adaptive Lighting
+      icon: mdi:weather-sunny
+      state: 'on'
+- id: '1610315156717'
+  name: Woonkamer - Overdag
+  entities:
+    light.woonkamer_groep:
+      min_mireds: 140
+      max_mireds: 650
+      effect_list:
+      - colorloop
+      supported_color_modes:
+      - brightness
+      - color_temp
+      - hs
+      color_mode: color_temp
+      brightness: 200
+      color_temp: 340
+      entity_id:
+      - light.woonkamer_hektar_lamp
+      - light.woonkamer_lamp
+      - light.woonkamer_eettafel_lamp
+      - light.globe_lamp
+      - light.edison_lamp
+      - light.wiz_tunable_e14
+      - light.play_lichtbalk_l
+      - light.play_lichtbalk_m
+      - light.play_lichtbalk_r
+      friendly_name: Woonkamer Groep
+      icon: mdi:lightbulb-group
+      supported_features: 44
+      state: 'on'
+    switch.begane_grond_adaptive_lighting:
+      friendly_name: Begane Grond - Adaptive Lighting
+      icon: mdi:weather-sunset
+      state: 'off'
+- id: '1610315168164'
+  name: Woonkamer - Helder
+  entities:
+    light.woonkamer_groep:
+      min_mireds: 140
+      max_mireds: 650
+      effect_list:
+      - colorloop
+      supported_color_modes:
+      - brightness
+      - color_temp
+      - hs
+      color_mode: color_temp
+      brightness: 233
+      color_temp: 229
+      entity_id:
+      - light.woonkamer_hektar_lamp
+      - light.woonkamer_lamp
+      - light.woonkamer_eettafel_lamp
+      - light.globe_lamp
+      - light.edison_lamp
+      - light.wiz_tunable_e14
+      - light.play_lichtbalk_l
+      - light.play_lichtbalk_m
+      - light.play_lichtbalk_r
+      friendly_name: Woonkamer Groep
+      icon: mdi:lightbulb-group
+      supported_features: 44
+      state: 'on'
+    switch.begane_grond_adaptive_lighting:
+      friendly_name: Begane Grond - Adaptive Lighting
+      icon: mdi:weather-sunset
+      state: 'off'
+- id: '1635855055725'
+  name: Studiekamer - Chinatown
+  entities:
+    light.studiekamer_lamp:
+      min_mireds: 140
+      max_mireds: 650
+      supported_color_modes:
+      - color_temp
+      color_mode: color_temp
+      brightness: 128
+      color_temp: 454
+      hs_color:
+      - 29.79
+      - 84.553
+      rgb_color:
+      - 255
+      - 146
+      - 39
+      xy_color:
+      - 0.579
+      - 0.388
+      is_deconz_group: false
+      icon: mdi:ceiling-light
+      friendly_name: Studiekamer Lamp
+      supported_features: 40
+      state: 'on'
+    light.studiekamer_bureauspot:
+      min_mireds: 140
+      max_mireds: 650
+      supported_color_modes:
+      - color_temp
+      color_mode: color_temp
+      brightness: 128
+      color_temp: 650
+      hs_color:
+      - 26.057
+      - 100
+      rgb_color:
+      - 255
+      - 110
+      - 0
+      xy_color:
+      - 0.633
+      - 0.357
+      is_deconz_group: false
+      icon: hue:desk-lamp
+      friendly_name: Studiekamer Bureauspot
+      supported_features: 40
+      state: 'on'
+    light.studiekamer_hektar_bureaulamp:
+      min_mireds: 153
+      max_mireds: 454
+      supported_color_modes:
+      - color_temp
+      color_mode: color_temp
+      brightness: 128
+      color_temp: 454
+      hs_color:
+      - 29.79
+      - 84.553
+      rgb_color:
+      - 255
+      - 146
+      - 39
+      xy_color:
+      - 0.579
+      - 0.388
+      is_deconz_group: false
+      icon: mdi:desk-lamp
+      friendly_name: Studiekamer Hektar Bureaulamp
+      supported_features: 40
+      state: 'on'
+    light.studiekamer_lightstrip_plus:
+      min_mireds: 140
+      max_mireds: 650
+      effect_list:
+      - colorloop
+      supported_color_modes:
+      - color_temp
+      - hs
+      - xy
+      color_mode: xy
+      brightness: 254
+      hs_color:
+      - 0.333
+      - 70.588
+      rgb_color:
+      - 255
+      - 76
+      - 75
+      xy_color:
+      - 0.6315
+      - 0.3051
+      is_deconz_group: false
+      icon: hue:lightstrip
+      friendly_name: Studiekamer Lightstrip Plus
+      supported_features: 44
+      state: 'on'
+  icon: mdi:palette-swatch
+- id: '1635855726494'
+  name: Studiekamer - Midwinter
+  entities:
+    light.studiekamer_lamp:
+      min_mireds: 140
+      max_mireds: 650
+      supported_color_modes:
+      - color_temp
+      color_mode: color_temp
+      brightness: 254
+      color_temp: 153
+      hs_color:
+      - 54.768
+      - 1.6
+      rgb_color:
+      - 255
+      - 254
+      - 250
+      xy_color:
+      - 0.326
+      - 0.333
+      is_deconz_group: false
+      icon: mdi:ceiling-light
+      friendly_name: Studiekamer Lamp
+      supported_features: 40
+      state: 'on'
+    light.studiekamer_bureauspot:
+      min_mireds: 140
+      max_mireds: 650
+      supported_color_modes:
+      - color_temp
+      color_mode: color_temp
+      brightness: 254
+      color_temp: 250
+      hs_color:
+      - 26.812
+      - 34.87
+      rgb_color:
+      - 255
+      - 205
+      - 166
+      xy_color:
+      - 0.421
+      - 0.364
+      is_deconz_group: false
+      icon: hue:desk-lamp
+      friendly_name: Studiekamer Bureauspot
+      supported_features: 40
+      state: 'on'
+    light.studiekamer_hektar_bureaulamp:
+      min_mireds: 153
+      max_mireds: 454
+      supported_color_modes:
+      - color_temp
+      color_mode: color_temp
+      brightness: 254
+      color_temp: 153
+      hs_color:
+      - 54.768
+      - 1.6
+      rgb_color:
+      - 255
+      - 254
+      - 250
+      xy_color:
+      - 0.326
+      - 0.333
+      is_deconz_group: false
+      icon: mdi:desk-lamp
+      friendly_name: Studiekamer Hektar Bureaulamp
+      supported_features: 40
+      state: 'on'
+    light.studiekamer_lightstrip_plus:
+      min_mireds: 140
+      max_mireds: 650
+      effect_list:
+      - colorloop
+      supported_color_modes:
+      - color_temp
+      - hs
+      - xy
+      color_mode: xy
+      brightness: 254
+      hs_color:
+      - 225.315
+      - 56.078
+      rgb_color:
+      - 112
+      - 147
+      - 255
+      xy_color:
+      - 0.193
+      - 0.176
+      is_deconz_group: false
+      icon: hue:lightstrip
+      friendly_name: Studiekamer Lightstrip Plus
+      supported_features: 44
+      state: 'on'
+  icon: mdi:palette-swatch
+- id: '1641654794238'
+  name: Slaapkamer - Nightlight
+  entities:
+    light.slaapkamer_lamp:
+      min_mireds: 140
+      max_mireds: 650
+      supported_color_modes:
+      - color_temp
+      color_mode: color_temp
+      brightness: 38
+      color_temp: 454
+      hs_color:
+      - 29.79
+      - 84.553
+      rgb_color:
+      - 255
+      - 146
+      - 39
+      xy_color:
+      - 0.579
+      - 0.388
+      is_deconz_group: false
+      icon: mdi:ceiling-light
+      friendly_name: Slaapkamer Lamp
+      supported_features: 40
+      state: 'on'
+    light.slaapkamer_hektar_lamp:
+      min_mireds: 140
+      max_mireds: 650
+      supported_color_modes:
+      - color_temp
+      is_deconz_group: false
+      icon: mdi:floor-lamp
+      friendly_name: Slaapkamer Hektar Lamp
+      supported_features: 40
+      state: 'off'
+    light.slaapkamer_nachtkastjes:
+      min_mireds: 140
+      max_mireds: 650
+      supported_color_modes:
+      - color_temp
+      color_mode: color_temp
+      brightness: 38
+      color_temp: 477
+      hs_color:
+      - 30.192
+      - 89.568
+      rgb_color:
+      - 255
+      - 141
+      - 26
+      xy_color:
+      - 0.59
+      - 0.386
+      entity_id:
+      - light.slaapkamer_nachtkastje_l
+      - light.slaapkamer_nachtkastje_r
+      icon: mdi:lamps
+      friendly_name: Slaapkamer Nachtkastjes
+      supported_features: 40
+      state: 'on'
+  icon: mdi:palette-swatch
