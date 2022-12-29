@@ -170,13 +170,7 @@
     data: {}
     target:
       entity_id:
-      - switch.adaptive_lighting_adapt_color_woonkamer
-      - switch.adaptive_lighting_adapt_brightness_woonkamer
-      - switch.adaptive_lighting_adapt_brightness_hue_filament
-      - switch.adaptive_lighting_adapt_color_hue_filament
       - switch.begane_grond_adaptive_lighting
-      - switch.adaptive_lighting_adapt_color_ambient_lightstrip
-      - switch.adaptive_lighting_adapt_brightness_ambient_lightstrip
   mode: single
 - id: '1610308361097'
   alias: Reset Control - Studiekamer
@@ -196,14 +190,16 @@
       minutes: 0
       seconds: 0
       milliseconds: 0
-  condition:
-  - condition: state
-    entity_id: input_boolean.studiekamer_control
-    state: 'on'
+  condition: []
   action:
   - service: input_boolean.turn_off
     data: {}
     entity_id: input_boolean.studiekamer_control
+  - service: input_select.select_option
+    target:
+      entity_id: input_select.studiekamer_scenes
+    data:
+      option: Adaptive Lighting
   mode: single
 - id: '1610308456079'
   alias: Reset Control - Slaapkamer
@@ -359,13 +355,18 @@
     entity_id: sensor.zolder_light_sensor
     below: '20'
   action:
+  - service: light.turn_on
+    target:
+      entity_id: light.zolder_groep
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 2
+      milliseconds: 0
   - service: adaptive_lighting.apply
     data:
       lights: light.zolder_groep
       entity_id: switch.adaptive_lighting_ruimten
-  - service: switch.turn_on
-    target:
-      entity_id: switch.zolder_nymane
   - wait_for_trigger:
     - platform: state
       entity_id: binary_sensor.zolder_occupancy
@@ -404,8 +405,8 @@
       state: 'off'
   mode: single
 - id: '1610533060447'
-  alias: deCONZ - Woonkamer IKEA SYMFONISK Remote
-  description: Switch to control music playback
+  alias: deCONZ - Woonkamer SYMFONISK Controller
+  description: Controller to control music playback
   use_blueprint:
     path: L-Carslake/deconz-ikea-symfonisk.yaml
     input:
@@ -644,8 +645,8 @@
       entity_id: media_player.ikea_symfonisk, media_player.sonos_roam, media_player.sonos_arc
   mode: single
 - id: '1613724944074'
-  alias: deCONZ - Security Smart Button
-  description: Switch to enable and disable the alarm system
+  alias: deCONZ - Security Hue Button
+  description: Button to enable and disable the alarm system
   trigger:
   - device_id: 4945d96ec9acaa3fb3aef0184d00e467
     domain: deconz
@@ -874,8 +875,8 @@
       - light.studiekamer_groep
   mode: restart
 - id: '1625428959292'
-  alias: deCONZ - Woonkamer IKEA STYRBAR Remote
-  description: Swith to control light(s)
+  alias: deCONZ - Woonkamer STYRBAR Remote
+  description: Remote to control light(s)
   use_blueprint:
     path: Gabriel/deconz-ikea-styrbar.yaml
     input:
@@ -925,9 +926,9 @@
         target:
           entity_id:
           - light.slaapkamer_nachtkastjes
-          - light.woonkamer_hektar_lamp
+          - light.slaapkamer_hektar_lamp
 - id: '1627321581842'
-  alias: deCONZ - Zolder IKEA Switch
+  alias: deCONZ - Zolder TRADFRI Switch
   description: Switch to control light(s)
   use_blueprint:
     path: Gabriel/deconz-ikea-button-switch.yaml
@@ -977,17 +978,9 @@
       button_hue:
       - choose:
         - conditions:
-          - condition: or
-            conditions:
-            - condition: state
-              entity_id: input_select.home_state
-              state: Evening
-            - condition: state
-              entity_id: input_select.home_state
-              state: Night
-            - condition: sun
-              before: sunrise
-              after: sunset
+          - condition: state
+            state: Evening
+            entity_id: input_select.home_state
           sequence:
           - service: input_select.select_option
             target:
@@ -998,65 +991,6 @@
         - service: switch.turn_on
           target:
             entity_id: switch.day_state
-- id: '1629447322416'
-  alias: '# Experimental - HomeKit Adaptive Lighting'
-  description: Work in Progress
-  trigger:
-  - platform: event
-    event_type: homekit_state_change
-    event_data:
-      entity_id: light.woonkamer_eettafel_lamp
-      service: turn_on
-  - platform: event
-    event_type: homekit_state_change
-    event_data:
-      entity_id: light.woonkamer_lamp
-      service: turn_on
-  - platform: event
-    event_type: homekit_state_change
-    event_data:
-      entity_id: light.globe_lamp
-      service: turn_on
-  - platform: event
-    event_type: homekit_state_change
-    event_data:
-      entity_id: light.edison_lamp
-      service: turn_on
-  - platform: event
-    event_type: homekit_state_change
-    event_data:
-      entity_id: light.tarnaby_lamp
-      service: turn_on
-  - platform: event
-    event_type: homekit_state_change
-    event_data:
-      entity_id: light.globe_lamp
-      service: turn_on
-  - platform: event
-    event_type: homekit_state_change
-    event_data:
-      entity_id: light.play_lichtbalk
-      service: turn_on
-  - platform: event
-    event_type: homekit_state_change
-    event_data:
-      entity_id: light.woonkamer_groep
-      service: turn_on
-  condition:
-  - condition: or
-    conditions:
-    - condition: template
-      value_template: '{{ trigger.event.data.value.startswith(''Set state to 1, brightness'')
-        }}'
-    - condition: template
-      value_template: '{{ trigger.event.data.value.startswith(''color temperature'')
-        }}'
-  action:
-  - service: switch.turn_off
-    target:
-      entity_id:
-      - switch.begane_grond_adaptive_lighting
-  mode: single
 - id: '1629971132565'
   alias: Home Assistant - Startup
   description: Actions to run at boot
@@ -1285,6 +1219,18 @@
   - platform: event
     event_type: homekit_state_change
     event_data:
+      entity_id: light.play_lichtbalk_l
+      service: turn_on
+    id: studiekamer
+  - platform: event
+    event_type: homekit_state_change
+    event_data:
+      entity_id: light.play_lichtbalk_r
+      service: turn_on
+    id: studiekamer
+  - platform: event
+    event_type: homekit_state_change
+    event_data:
       entity_id: light.kledingkamer_groep
       service: turn_on
     id: kledingkamer
@@ -1333,6 +1279,8 @@
     - condition: template
       value_template: '{{ trigger.event.data.value.startswith(''color temperature'')
         }}'
+    - condition: template
+      value_template: '{{ trigger.event.data.value.startswith(''set color at'') }}'
   action:
   - choose:
     - conditions:
@@ -1864,8 +1812,8 @@
     entity_id: input_select.home_state
     state: Day
   - condition: state
-    entity_id: input_boolean.home_state_delay
-    state: 'off'
+    entity_id: input_boolean.home_state_automatic
+    state: 'on'
   action:
   - service: switch.turn_on
     target:
@@ -1895,10 +1843,9 @@
       milliseconds: 0
   - service: light.turn_off
     target:
-      entity_id: light.woonkamer_groep
-  - service: switch.turn_off
-    target:
-      entity_id: switch.woonkamer_plug
+      entity_id:
+      - light.woonkamer_groep
+      - light.woonkamer_kerstboom
   mode: single
 - id: '1634824004562'
   alias: Home State - Morning
@@ -1908,8 +1855,11 @@
     event: sunrise
   condition:
   - condition: state
-    entity_id: input_boolean.home_state_delay
-    state: 'off'
+    entity_id: input_boolean.home_state_automatic
+    state: 'on'
+  - condition: state
+    entity_id: input_select.home_state
+    state: Night
   action:
   - service: switch.turn_on
     target:
@@ -1946,9 +1896,9 @@
     to: 'on'
   condition: []
   action:
-  - service: switch.turn_on
+  - service: light.turn_on
     target:
-      entity_id: switch.woonkamer_plug
+      entity_id: light.woonkamer_kerstboom
   mode: single
 - id: '1635024518456'
   alias: deCONZ - Badkamer FoH Switch
@@ -1963,7 +1913,7 @@
       light_L: light.badkamer_lamp
       light_R: light.badkamer_lamp
 - id: '1635025233017'
-  alias: deCONZ - Studiekamer IKEA Switch
+  alias: deCONZ - Studiekamer TRADFRI Switch
   description: Switch to control light(s)
   use_blueprint:
     path: Gabriel/deconz-ikea-button-switch.yaml
@@ -2004,26 +1954,9 @@
     after: 06:00
     before: '10:00'
   action:
-  - service: switch.turn_off
-    target:
-      entity_id: switch.woonkamer_plug
-  mode: single
-- id: '1635360516773'
-  alias: TV - Disable Lightstrip Control
-  description: Disable control of the lightstrip & disable adaptive lighting when
-    Ambilight is on
-  trigger:
-  - platform: state
-    entity_id: media_player.play_sync_box
-    to: playing
-  condition: []
-  action:
   - service: light.turn_off
     target:
-      entity_id: light.play_gradient_lightstrip
-  - service: adaptive_lighting.set_manual_control
-    data:
-      entity_id: switch.adaptive_lighting_ambient_lightstrip
+      entity_id: light.woonkamer_kerstboom
   mode: single
 - id: '1635362394376'
   alias: TV - Spotify Audio Mode
@@ -2067,9 +2000,11 @@
   description: Change scenes based on an Input Select
   trigger:
   - platform: event
-    event_type: state_changed
+    event_type: call_service
     event_data:
-      entity_id: input_select.play_gradient_scenes
+      domain: input_select
+      service_data:
+        entity_id: input_select.play_gradient_scenes
   condition: []
   action:
   - service: script.turn_on
@@ -2090,4 +2025,94 @@
     target:
       entity_id:
       - script.scenes_woonkamer
+  mode: restart
+- id: '1635416907472'
+  alias: TV - Lightstrip Off @ Sync
+  description: Turn off lightstrip if it's turned on when Ambilight is on
+  trigger:
+  - platform: state
+    entity_id: light.play_gradient_lightstrip
+    to: 'on'
+    from: 'off'
+  condition:
+  - condition: state
+    entity_id: light.ambilight
+    state: 'on'
+  action:
+  - service: light.turn_off
+    target:
+      entity_id: light.play_gradient_lightstrip
+  mode: single
+- id: '1635419057870'
+  alias: TV - Disable Lightstrip Control @ Sync
+  description: Disable control of the lightstrip & disable adaptive lighting when
+    Ambilight is on
+  trigger:
+  - platform: state
+    entity_id: light.ambilight
+    to: 'on'
+  condition: []
+  action:
+  - service: light.turn_off
+    target:
+      entity_id: light.play_gradient_lightstrip
+  - service: adaptive_lighting.set_manual_control
+    data:
+      entity_id: switch.adaptive_lighting_woonkamer
+      lights: light.play_gradient_lightstrip
+  mode: single
+- id: '1635498219436'
+  alias: TV - Lightstrip Off @ Day
+  description: Turn of the lighting behind the tv when it's turned off during the
+    day and no other lights are on
+  trigger:
+  - platform: state
+    entity_id: media_player.sony_bravia_tv
+    to: 'off'
+  condition:
+  - condition: state
+    entity_id: input_select.home_state
+    state: Day
+  - condition: state
+    entity_id: light.woonkamer_lamp
+    state: 'off'
+  - condition: state
+    entity_id: light.woonkamer_eettafel_lamp
+    state: 'off'
+  - condition: state
+    entity_id: light.filament_lamps
+    state: 'off'
+  action:
+  - service: light.turn_off
+    target:
+      entity_id: light.play_gradient_lightstrip
+  mode: single
+- id: '1635617614980'
+  alias: TV - Set Soundbar Source
+  description: ''
+  trigger:
+  - platform: state
+    entity_id: media_player.sony_bravia_tv
+    from: 'off'
+    to: playing
+  condition: []
+  action:
+  - service: switch.turn_on
+    target:
+      entity_id: switch.soundbar_source_tv
+  mode: single
+- id: '1635855168121'
+  alias: Scenes - Studiekamer
+  description: Change scenes based on an Input Select
+  trigger:
+  - platform: event
+    event_type: state_changed
+    event_data:
+      entity_id: input_select.studiekamer_scenes
+  condition: []
+  action:
+  - service: script.turn_on
+    target:
+      entity_id:
+      - script.scenes_studiekamer
   mode: restart
