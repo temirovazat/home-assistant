@@ -1,4 +1,5 @@
-#=== QUALITY OF LIFE SWITCHES ===#
+# █▀▀ █▀▀ █▄ █ █▀▀ █▀█ ▄▀█ █   #
+# █▄█ ██▄ █ ▀█ ██▄ █▀▄ █▀█ █▄▄ #
 
   - platform: template
     switches:
@@ -20,6 +21,27 @@
         turn_off:
           service: switch.turn_off
           entity_id: switch.keuken_smart_plug
+
+    # Duux ThreeSixty on/off using Tuya hvac_mode 
+  - platform: template
+    switches:
+      threesixty:
+        friendly_name: Duux ThreeSixty Power
+        unique_id: duux_threesixty_power
+        icon_template: mdi:hvac
+        turn_on:
+          - service: climate.set_hvac_mode
+            data:
+              hvac_mode: 'auto'
+            entity_id: climate.tuya_threesixty_v2
+          - service: scene.turn_on
+            target:
+              entity_id: scene.threesixty_boost_mode
+        turn_off:
+          service: climate.set_hvac_mode
+          data:
+            hvac_mode: 'off'
+          entity_id: climate.tuya_threesixty_v2
 
       # Fix for Zolder spots not applying adaptive lighting
       zolder_nymane:
@@ -64,8 +86,8 @@
               - switch.adaptive_lighting_woonkamer
               - switch.adaptive_lighting_hue_filament
 
-
-#=== DEVICE TRACKERS ===#
+# ▀█▀ █▀█ ▄▀█ █▀▀ █▄▀ █▀▀ █▀█ █▀ #
+#  █  █▀▄ █▀█ █▄▄ █ █ ██▄ █▀▄ ▄█ #
 
   - platform: template
     switches:
@@ -111,31 +133,26 @@
             dev_id: shanna
             location_name: not_home
 
+# █▀ █▄█ █▄ █ █▀▀   █▄▄ █▀█ ▀▄▀ #
+# ▄█  █  █ ▀█ █▄▄   █▄█ █▄█ █ █ #
 
-#=== CLIMATE ===#
-
-    # Duux ThreeSixty on/off using Tuya hvac_mode 
+    # Turn on/off syncing lights
   - platform: template
     switches:
-      threesixty:
-        friendly_name: Duux ThreeSixty Power
-        icon_template: mdi:hvac
+      ambilight:
+        friendly_name: Ambilight
+        unique_id: play_sync_box_ambilight
+        value_template: "{{ is_state('media_player.play_sync_box', 'playing') }}"
+        icon_template: mdi:television-ambient-light
         turn_on:
-          - service: climate.set_hvac_mode
-            data:
-              hvac_mode: 'auto'
-            entity_id: climate.tuya_threesixty_v2
-          - service: scene.turn_on
-            target:
-              entity_id: scene.threesixty_boost_mode
+          - service: media_player.media_play
+            entity_id: media_player.play_sync_box
         turn_off:
-          service: climate.set_hvac_mode
-          data:
-            hvac_mode: 'off'
-          entity_id: climate.tuya_threesixty_v2
+          - service: media_player.media_pause
+            entity_id: media_player.play_sync_box
 
-
-#=== MODE SWITCHERS ===#
+# █▀▄▀█ █▀█ █▀▄ █▀▀ █▀ #
+# █ ▀ █ █▄█ █▄▀ ██▄ ▄█ #
 
   - platform: template
     switches:
@@ -203,8 +220,8 @@
                   switch.evening_state
                 {% endif %}
 
-
-#=== HOME STATES ===#
+# █ █ █▀█ █▀▄▀█ █▀▀   █▀ ▀█▀ ▄▀█ ▀█▀ █▀▀ █▀ #
+# █▀█ █▄█ █ ▀ █ ██▄   ▄█  █  █▀█  █  ██▄ ▄█ #
 
   - platform: template
     switches:
