@@ -1,0 +1,72 @@
+# ▀█▀ █▀▀ █▀▄▀█ █▀█ █   ▄▀█ ▀█▀ █▀▀ █▀ #
+#  █  ██▄ █ ▀ █ █▀▀ █▄▄ █▀█  █  ██▄ ▄█ #
+
+  - platform: template
+    fans:
+      # Template fan for Duux Whisper Flex controlled by Tuya cloud
+      whisper_flex:
+        friendly_name: "Whisper Flex"
+        unique_id: template_fan_whisper_flex
+        availability_template: "{{ states('fan.tuya_whisper_flex') != 'unavailable' }}"
+        value_template: "{{ states('fan.tuya_whisper_flex') }}"
+        percentage_template: "{{ (state_attr('fan.tuya_whisper_flex', 'percentage') | int) }}"
+#        preset_mode_template: "{{ states('input_select.whisper_flex_modes') }}"
+        oscillating_template: "{{ states('input_select.whisper_flex_oscillating') }}"
+        turn_on:
+          - service: fan.turn_on
+            target:
+              entity_id: fan.tuya_whisper_flex
+        turn_off:
+          - service: script.action_turn_fan_off
+        set_percentage:
+          - service: fan.turn_on
+            entity_id: fan.tuya_whisper_flex
+          - service: fan.set_percentage
+            data:
+              entity_id: fan.tuya_whisper_flex
+              percentage: '{{ percentage }}'
+#        set_preset_mode:
+#          - service: input_select.select_option
+#            data:
+#              entity_id: input_select.whisper_flex_modes
+#              option: '{{ preset_mode }}'
+#          - service: scene.turn_on
+#            data_template:
+#              entity_id: '{{ "scene.flex_" + preset_mode|lower|replace(" ", "_")|string }}'
+        set_oscillating:
+          - service: input_select.select_option
+            data:
+              entity_id: input_select.whisper_flex_oscillating
+              option: '{{ oscillating }}'
+          - service: scene.turn_on
+            data_template:
+              entity_id: '{{ "scene.flex_oscillation_" + oscillating|lower|string }}'
+        speed_count: 100
+#        preset_modes:
+#          - 'Normal Mode'
+#          - 'Sleep Mode'
+#          - 'Nature Mode'
+
+      # Template fan for Smartmi P1 air purifier controlled by HomeKit
+      smartmi_p1:
+        friendly_name: "Smartmi P1"
+        unique_id: fan_smartmi_p1
+        value_template: "{{ states('fan.tuya_smartmi_p1') }}"
+        preset_mode_template: "{{ state_attr('fan.tuya_smartmi_p1', 'preset_mode')|capitalize }}"
+        turn_on:
+          service: fan.turn_on
+          target:
+            entity_id: fan.tuya_smartmi_p1
+        turn_off:
+          service: fan.turn_off
+          target:
+            entity_id: fan.tuya_smartmi_p1
+        set_preset_mode:
+          service: fan.set_preset_mode
+          data:
+            entity_id: fan.tuya_smartmi_p1
+            preset_mode: '{{ preset_mode|lower }}'
+        preset_modes:
+          - 'Auto'
+          - 'Manual'
+          - 'Strong'

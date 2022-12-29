@@ -1,0 +1,31 @@
+# ▀█▀ █▀▀ █▀▄▀█ █▀█ █   ▄▀█ ▀█▀ █▀▀ █▀ #
+#  █  ██▄ █ ▀ █ █▀▀ █▄▄ █▀█  █  ██▄ ▄█ #
+
+  - platform: template
+    covers:
+    # Advanced template covers for SwitchBot using @switchbot/homebridge-switchbot (supports open/close actions and full state)
+      woonkamer_gordijn:
+        unique_id: template_woonkamer_gordijn
+        device_class: curtain
+        friendly_name: "Woonkamer Gordijn"
+        availability_template: "{{ states('cover.woonkamer_switchbot') != 'unavailable' }}"
+        value_template: "{{ states('cover.woonkamer_switchbot') }}"
+        open_cover:
+          service: cover.open_cover
+          entity_id: cover.woonkamer_switchbot
+        close_cover:
+          service: cover.close_cover
+          entity_id: cover.woonkamer_switchbot
+
+      achterdeur_gordijn:
+        unique_id: template_achterdeur_gordijn
+        device_class: curtain
+        friendly_name: "Achterdeur Gordijn"
+        availability_template: "{{ states('cover.achterdeur_switchbot') != 'unavailable' }}"
+        value_template: "{{ states('cover.achterdeur_switchbot') }}"
+        open_cover:
+          service: cover.open_cover
+          entity_id: cover.achterdeur_switchbot
+        close_cover:
+          service: cover.close_cover
+          entity_id: cover.achterdeur_switchbot
