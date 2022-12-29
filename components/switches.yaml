@@ -1,0 +1,303 @@
+#=== QUALITY OF LIFE SWITCHES ===#
+
+  - platform: template
+    switches:
+      # Water kettle @ keuken
+      keuken_waterkoker:
+        friendly_name: Keuken Waterkoker
+        unique_id: keuken_waterkoker
+        value_template: "{{ is_state('switch.keuken_smart_plug', 'on') }}"
+        availability_template: "{{ states('switch.keuken_smart_plug') != 'unavailable' }}"
+        icon_template: >-
+          {% if is_state('sensor.keuken_smart_plug_power', '0') %}
+            mdi:kettle
+          {% else %}
+            mdi:kettle-steam
+          {% endif %}
+        turn_on:
+          service: switch.turn_on
+          entity_id: switch.keuken_smart_plug
+        turn_off:
+          service: switch.turn_off
+          entity_id: switch.keuken_smart_plug
+
+      # Fix for Zolder spots not applying adaptive lighting
+      zolder_nymane:
+        friendly_name: Zolder NYMÅNE
+        unique_id: zolder_nymane
+        value_template: "{{ is_state('light.zolder_groep', 'on') }}"
+        availability_template: "{{ states('light.zolder_groep') != 'unavailable' }}"
+        icon_template: >-
+          {% if is_state('light.zolder_groep', 'on') %}
+            mdi:lightbulb-group
+          {% else %}
+            mdi:lightbulb-group-off
+          {% endif %}
+        turn_on:
+          service: light.turn_on
+          entity_id: light.zolder_groep
+        turn_off:
+          service: light.turn_off
+          entity_id: light.zolder_groep
+
+    # Adaptive Lighting for woonkamer area
+  - platform: template
+    switches:
+      begane_grond_adaptive_lighting:
+        friendly_name: Begane Grond - Adaptive Lighting
+        unique_id: adaptive_lighting_begane_grond
+        value_template: "{{ is_state('switch.adaptive_lighting_woonkamer', 'on') }}"
+        icon_template: >-
+          {% if is_state('switch.adaptive_lighting_woonkamer', 'on') %}
+            mdi:weather-sunny
+          {% else %}
+            mdi:weather-sunset
+          {% endif %}
+        turn_on:
+          - service: switch.turn_on
+            entity_id:
+              - switch.adaptive_lighting_woonkamer
+              - switch.adaptive_lighting_hue_filament
+        turn_off:
+          - service: switch.turn_off
+            entity_id:
+              - switch.adaptive_lighting_woonkamer
+              - switch.adaptive_lighting_hue_filament
+
+
+#=== DEVICE TRACKERS ===#
+
+  - platform: template
+    switches:
+      # HomeKit tracker for Gabriel
+      gabriel_home:
+        friendly_name: Gabriel Home
+        unique_id: switch_gabriel_home
+        icon_template: >-
+          {% if is_state('device_tracker.gabriel', 'home') %}
+            mdi:account-check
+          {% else %}
+            mdi:account-cancel
+          {% endif %}
+        turn_on:
+          service: device_tracker.see
+          data:
+            dev_id: gabriel
+            location_name: home
+        turn_off:
+          service: device_tracker.see
+          data:
+            dev_id: gabriel
+            location_name: not_home
+
+      # HomeKit tracker for Shanna
+      shanna_home:
+        friendly_name: Shanna Home
+        unique_id: switch_shanna_home
+        icon_template: >-
+          {% if is_state('device_tracker.shanna', 'home') %}
+            mdi:account-check
+          {% else %}
+            mdi:account-cancel
+          {% endif %}
+        turn_on:
+          service: device_tracker.see
+          data:
+            dev_id: shanna
+            location_name: home
+        turn_off:
+          service: device_tracker.see
+          data:
+            dev_id: shanna
+            location_name: not_home
+
+
+#=== CLIMATE ===#
+
+    # Duux ThreeSixty on/off using Tuya hvac_mode 
+  - platform: template
+    switches:
+      threesixty:
+        friendly_name: Duux ThreeSixty Power
+        icon_template: mdi:hvac
+        turn_on:
+          - service: climate.set_hvac_mode
+            data:
+              hvac_mode: 'auto'
+            entity_id: climate.tuya_threesixty_v2
+          - service: scene.turn_on
+            target:
+              entity_id: scene.threesixty_boost_mode
+        turn_off:
+          service: climate.set_hvac_mode
+          data:
+            hvac_mode: 'off'
+          entity_id: climate.tuya_threesixty_v2
+
+
+#=== MODE SWITCHERS ===#
+
+  - platform: template
+    switches:
+      # Privacy Mode
+      privacy_mode:
+        friendly_name: Privacy Mode
+        unique_id: switch_privacy_mode
+        icon_template: mdi:heart-circle
+        turn_on:
+          - service: script.turn_on
+            entity_id: script.mode_privacy
+        turn_off:
+          - service: light.turn_off
+            entity_id: light.woonkamer_groep
+          - service: light.turn_off
+            entity_id: light.keuken_groep
+          - service: switch.turn_on
+            data_template:
+              entity_id: >
+                {% if is_state("input_select.home_state", "Day")%}
+                  switch.day_state
+                {% else %}
+                  switch.evening_state
+                {% endif %}
+
+      # Party Mode
+      party_mode:
+        friendly_name: Party Mode
+        unique_id: switch_party_mode
+        icon_template: mdi:account-supervisor-circle
+        turn_on:
+          - service: script.turn_on
+            entity_id: script.mode_party
+        turn_off:
+          - service: light.turn_off
+            entity_id: light.woonkamer_groep
+          - service: light.turn_off
+            entity_id: light.keuken_groep
+          - service: switch.turn_on
+            data_template:
+              entity_id: >
+                {% if is_state("input_select.home_state", "Day")%}
+                  switch.day_state
+                {% else %}
+                  switch.evening_state
+                {% endif %}
+
+      # Cinema Mode
+      cinema_mode:
+        friendly_name: Cinema Mode
+        unique_id: switch_cinema_mode
+        icon_template: mdi:movie-roll
+        turn_on:
+          - service: script.turn_on
+            entity_id: script.mode_cinema
+        turn_off:
+          - service: light.turn_off
+            entity_id: light.woonkamer_groep
+          - service: switch.turn_on
+            data_template:
+              entity_id: >
+                {% if is_state("input_select.home_state", "Day")%}
+                  switch.day_state
+                {% else %}
+                  switch.evening_state
+                {% endif %}
+
+
+#=== HOME STATES ===#
+
+  - platform: template
+    switches:
+      # Switch for Morning script
+      morning_state:
+        friendly_name: Morning State
+        unique_id: switch_morning_state
+        icon_template: mdi:weather-sunset-up
+        value_template: >-
+          {{ is_state('input_select.home_state', 'Morning')
+             and is_state('cover.keuken_rolgordijnen', 'open')
+             and is_state('light.voortuin_buitenlamp', 'off')
+             and is_state('light.achtertuin_buitenlamp', 'off')
+             }}
+        turn_on:
+          - service: script.turn_on
+            entity_id: script.home_state_morning
+          - service: switch.turn_off
+            entity_id:
+              - switch.day_state
+              - switch.evening_state
+              - switch.night_state
+        turn_off:
+          - service: script.turn_off
+            entity_id: script.home_state_morning
+      
+      # Switch for Day script
+      day_state:
+        friendly_name: Day State
+        unique_id: switch_day_state
+        icon_template: mdi:weather-sunny
+        value_template: >-
+          {{ is_state('input_select.home_state', 'Day')
+             and is_state('input_boolean.air_purifier', 'on')
+             and is_state('cover.slaapkamer_rolgordijnen', 'open')
+             and is_state('cover.keuken_rolgordijnen', 'open')
+             }}
+        turn_on:
+          - service: script.turn_on
+            entity_id: script.home_state_day
+          - service: switch.turn_off
+            entity_id:
+              - switch.morning_state
+              - switch.evening_state
+              - switch.night_state
+        turn_off:
+          - service: script.turn_off
+            entity_id: script.home_state_day
+
+      # Switch for Evening script
+      evening_state:
+        friendly_name: Evening State
+        unique_id: switch_evening_state
+        icon_template: mdi:weather-sunset
+        value_template: >-
+          {{ is_state('input_select.home_state', 'Evening')
+             and is_state('cover.keuken_rolgordijnen', 'closed')
+             and is_state('cover.slaapkamer_rolgordijnen', 'closed')
+             and is_state('light.voortuin_buitenlamp', 'on')
+             and is_state('light.achtertuin_buitenlamp', 'on')
+             }}
+        turn_on:
+          - service: script.turn_on
+            entity_id: script.home_state_evening
+          - service: switch.turn_off
+            entity_id:
+              - switch.morning_state
+              - switch.day_state
+              - switch.night_state
+        turn_off:
+          - service: script.turn_off
+            entity_id: script.home_state_evening
+
+      # Switch for Night script
+      night_state:
+        friendly_name: Night State
+        unique_id: switch_night_state
+        icon_template: mdi:weather-night
+        value_template: >-
+          {{ is_state('input_select.home_state', 'Night')
+             and is_state('cover.keuken_rolgordijnen', 'closed')
+             and is_state('cover.slaapkamer_rolgordijnen', 'closed')
+             and is_state('light.voortuin_buitenlamp', 'on')
+             and is_state('light.achtertuin_buitenlamp', 'on')
+             }}
+        turn_on:
+          - service: script.turn_on
+            entity_id: script.home_state_night
+          - service: switch.turn_off
+            entity_id:
+              - switch.morning_state
+              - switch.day_state
+              - switch.evening_state
+        turn_off:
+          - service: script.turn_off
+            entity_id: script.home_state_night
