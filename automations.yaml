@@ -747,7 +747,7 @@
   - service: switch.turn_on
     target:
       entity_id:
-      - switch.aqara_g2h
+      - switch.security_cam
   mode: single
 - id: '1614153848468'
   alias: Security - Camera Access DISABLED
@@ -774,7 +774,7 @@
   - service: switch.turn_off
     target:
       entity_id:
-      - switch.aqara_g2h
+      - switch.security_cam
   - service: input_boolean.turn_off
     target:
       entity_id: input_boolean.homekit_cam_motion_sensor
@@ -960,6 +960,29 @@
       take_control:
         entity_id: input_boolean.studiekamer_control
       adaptive_lighting: switch.adaptive_lighting_ruimten
+      button_hue:
+      - service: input_select.select_next
+        target:
+          entity_id: input_select.studiekamer_scenes
+      button_power_hold:
+      - choose:
+        - conditions:
+          - condition: state
+            entity_id: climate.studiekamer_radiator
+            state: away
+            attribute: preset_mode
+          sequence:
+          - service: climate.set_preset_mode
+            target:
+              entity_id: climate.studiekamer_radiator
+            data:
+              preset_mode: none
+        default:
+        - service: climate.set_preset_mode
+          target:
+            entity_id: climate.studiekamer_radiator
+          data:
+            preset_mode: away
 - id: '1627322789979'
   alias: deCONZ - Slaapkamer Hue Dimmer
   description: Switch to control light(s)
@@ -982,11 +1005,9 @@
             state: Evening
             entity_id: input_select.home_state
           sequence:
-          - service: input_select.select_option
+          - service: switch.turn_on
             target:
-              entity_id: input_select.home_state_modifier
-            data:
-              option: Sleeping
+              entity_id: switch.sleeping_modifier
         default:
         - service: switch.turn_on
           target:
@@ -1688,10 +1709,7 @@
   - platform: state
     entity_id: input_select.home_state_modifier
     to: Home
-  condition:
-  - condition: state
-    entity_id: switch.party_mode
-    state: 'off'
+  condition: []
   action:
   - service: script.turn_on
     target:
@@ -1706,10 +1724,7 @@
   - platform: state
     entity_id: input_select.home_state_modifier
     to: Away
-  condition:
-  - condition: state
-    entity_id: switch.party_mode
-    state: 'off'
+  condition: []
   action:
   - service: script.turn_on
     target:
@@ -1886,32 +1901,6 @@
     target:
       entity_id: switch.day_state
   mode: single
-- id: '1634831015939'
-  alias: Location - Shanna @ Home
-  description: Automations to run, specifically when Shanna comes home
-  trigger:
-  - platform: state
-    entity_id: switch.shanna_home
-    from: 'off'
-    to: 'on'
-  condition: []
-  action:
-  - service: light.turn_on
-    target:
-      entity_id: light.woonkamer_kerstboom
-  mode: single
-- id: '1635024518456'
-  alias: deCONZ - Badkamer FoH Switch
-  description: Switch to control light(s)
-  use_blueprint:
-    path: Gabriel/deconz-FoH-switch.yaml
-    input:
-      remote: cb34eb7664bdcfd14c8d2c2eda9f46af
-      take_control:
-        entity_id: input_boolean.badkamer_control
-      adaptive_lighting: switch.adaptive_lighting_ruimten
-      light_L: light.badkamer_lamp
-      light_R: light.badkamer_lamp
 - id: '1635025233017'
   alias: deCONZ - Studiekamer TRADFRI Switch
   description: Switch to control light(s)
@@ -1934,30 +1923,6 @@
   action:
   - service: shell_command.lovelace_convert
   mode: restart
-- id: '1635150252380'
-  alias: Location - Shanna @ Morning Commute
-  description: Automations to run, specifically when Shanna leaves in the morning
-  trigger:
-  - platform: state
-    entity_id: switch.shanna_home
-    from: 'on'
-    to: 'off'
-  condition:
-  - condition: time
-    weekday:
-    - mon
-    - tue
-    - thu
-    - fri
-    - sat
-    - sun
-    after: 06:00
-    before: '10:00'
-  action:
-  - service: light.turn_off
-    target:
-      entity_id: light.woonkamer_kerstboom
-  mode: single
 - id: '1635362394376'
   alias: TV - Spotify Audio Mode
   description: Sync and desync Ambilight Mode to Audio when Spotify is playing
@@ -2027,8 +1992,8 @@
       - script.scenes_woonkamer
   mode: restart
 - id: '1635416907472'
-  alias: TV - Lightstrip Off @ Sync
-  description: Turn off lightstrip if it's turned on when Ambilight is on
+  alias: TV - Keep Lightstrip Off
+  description: Turn off lightstrip if it's turned on while Ambilight is on
   trigger:
   - platform: state
     entity_id: light.play_gradient_lightstrip
@@ -2038,50 +2003,6 @@
   - condition: state
     entity_id: light.ambilight
     state: 'on'
-  action:
-  - service: light.turn_off
-    target:
-      entity_id: light.play_gradient_lightstrip
-  mode: single
-- id: '1635419057870'
-  alias: TV - Disable Lightstrip Control @ Sync
-  description: Disable control of the lightstrip & disable adaptive lighting when
-    Ambilight is on
-  trigger:
-  - platform: state
-    entity_id: light.ambilight
-    to: 'on'
-  condition: []
-  action:
-  - service: light.turn_off
-    target:
-      entity_id: light.play_gradient_lightstrip
-  - service: adaptive_lighting.set_manual_control
-    data:
-      entity_id: switch.adaptive_lighting_woonkamer
-      lights: light.play_gradient_lightstrip
-  mode: single
-- id: '1635498219436'
-  alias: TV - Lightstrip Off @ Day
-  description: Turn of the lighting behind the tv when it's turned off during the
-    day and no other lights are on
-  trigger:
-  - platform: state
-    entity_id: media_player.sony_bravia_tv
-    to: 'off'
-  condition:
-  - condition: state
-    entity_id: input_select.home_state
-    state: Day
-  - condition: state
-    entity_id: light.woonkamer_lamp
-    state: 'off'
-  - condition: state
-    entity_id: light.woonkamer_eettafel_lamp
-    state: 'off'
-  - condition: state
-    entity_id: light.filament_lamps
-    state: 'off'
   action:
   - service: light.turn_off
     target:
@@ -2116,3 +2037,131 @@
       entity_id:
       - script.scenes_studiekamer
   mode: restart
+- id: '1635942495785'
+  alias: deCONZ - Badkamer Hue Dimmer
+  description: Switch to control light(s)
+  use_blueprint:
+    path: Gabriel/deconz-hue-remote-v2.yaml
+    input:
+      remote: a1221d49c3647cffa2f8d42365938310
+      light: light.badkamer_lamp
+      take_control:
+        entity_id: input_boolean.badkamer_control
+      adaptive_lighting: switch.adaptive_lighting_ruimten
+- id: '1636015545472'
+  alias: Location - Individual @ Home
+  description: Individual automations to run, specifically when one of us comes home
+  trigger:
+  - platform: state
+    entity_id: switch.shanna_home
+    from: 'off'
+    to: 'on'
+    id: shanna
+  - platform: state
+    entity_id: switch.gabriel_home
+    from: 'off'
+    to: 'on'
+    id: gabriel
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: shanna
+      sequence:
+      - service: light.turn_on
+        target:
+          entity_id: light.woonkamer_kerstboom
+    default: []
+  mode: parallel
+  max: 2
+- id: '1636015750070'
+  alias: Location - Individual @ Away
+  description: Individual automations to run, specifically when one of us leaves
+  trigger:
+  - platform: state
+    entity_id: switch.gabriel_home
+    from: 'on'
+    to: 'off'
+    id: gabriel
+  - platform: state
+    entity_id: switch.shanna_home
+    from: 'on'
+    to: 'off'
+    id: shanna
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: gabriel
+      sequence:
+      - service: climate.set_preset_mode
+        target:
+          entity_id: climate.studiekamer_radiator
+        data:
+          preset_mode: away
+    - conditions:
+      - condition: trigger
+        id: shanna
+      sequence:
+      - condition: time
+        weekday:
+        - mon
+        - tue
+        - thu
+        - fri
+        - sat
+        - sun
+        after: 06:00
+        before: '10:00'
+      - service: light.turn_off
+        target:
+          entity_id: light.woonkamer_kerstboom
+    default: []
+  mode: single
+- id: '1636030085546'
+  alias: TV - Ambilight-to-Lightstrip
+  description: Automations to run when Ambilight turns off
+  trigger:
+  - platform: state
+    entity_id: light.ambilight
+    from: 'on'
+    to: 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 3
+      milliseconds: 0
+  condition:
+  - condition: state
+    entity_id: light.woonkamer_groep
+    state: 'on'
+  action:
+  - service: light.turn_on
+    target:
+      entity_id: light.play_gradient_lightstrip
+  mode: single
+- id: '1636030887029'
+  alias: TV - Lightstrip-to-Ambilight
+  description: Automations to run when Ambilight turns on
+  trigger:
+  - platform: state
+    entity_id: light.ambilight
+    from: 'off'
+    to: 'on'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+      milliseconds: 0
+  condition: []
+  action:
+  - service: light.turn_off
+    target:
+      entity_id: light.play_gradient_lightstrip
+  - service: adaptive_lighting.set_manual_control
+    data:
+      entity_id: switch.adaptive_lighting_woonkamer
+      lights: light.play_gradient_lightstrip
+  mode: single
