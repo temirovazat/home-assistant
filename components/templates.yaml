@@ -46,6 +46,21 @@
 
           {{ ((keuken + woonkamer_l + woonkamer_r) / 3) | round(1) }}
 
+        # Software Updates Counter Badge
+      - name: Software Update Badge
+        unique_id: software_update_badge
+        icon: mdi:numeric-{{ states('sensor.software_update_badge') }}-circle
+        state: >-
+          {% if states('group.software_updaters') == 'on' %}
+            {%- for item in states.group.software_updaters.attributes.entity_id if (states(item) == 'on') %}
+              {% if loop.last %}
+                {{ loop.index + states('sensor.hacs')|int(0) }}
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            {{ 0 + states('sensor.hacs')|int(0) }}
+          {% endif %}
+
 # █ █ █▀█ █▀▄▀█ █▀▀ █▄▀ █ ▀█▀ #
 # █▀█ █▄█ █ ▀ █ ██▄ █ █ █  █  #
 
@@ -76,18 +91,7 @@
           {% elif is_state('input_select.smartmi_p1_aqi', 'Poor') %}
             mdi:emoticon-dead
           {% endif %}    
-        state: >-
-          {% if is_state('input_select.smartmi_p1_aqi', 'Excellent') %}
-            {{ 'Excellent' }}
-          {% elif is_state('input_select.smartmi_p1_aqi', 'Good') %}
-            {{ 'Good' }}
-          {% elif is_state('input_select.smartmi_p1_aqi', 'Fair') %}
-            {{ 'Fair' }}
-          {% elif is_state('input_select.smartmi_p1_aqi', 'Inferior') %}
-            {{ 'Inferior' }}
-          {% elif is_state('input_select.smartmi_p1_aqi', 'Poor') %}
-            {{ 'Poor' }}
-          {% endif %}    
+        state: "{{ states('input_select.smartmi_p1_aqi') }}"
 
 # █▄ █ █▀█ ▀█▀ █ █▀▀ █▄█ #
 # █ ▀█ █▄█  █  █ █▀   █  #
@@ -135,12 +139,7 @@
           {{ is_state('binary_sensor.keuken_motion_sensor', 'on')
              or is_state('input_boolean.keuken_control', 'on')
           }}
-        icon: >-
-          {% if is_state('binary_sensor.keuken_occupancy', 'on') %}
-            mdi:account-box-multiple
-          {% else %}
-            mdi:account-box
-          {% endif %}
+        icon: "{{ iif(is_state('binary_sensor.keuken_occupancy', 'on'), 'mdi:account-box-multiple', 'mdi:account-box') }}"
         attributes:
           motion_sensor: "{{ states('binary_sensor.keuken_motion_sensor') }}"
           control_switch: "{{ states('input_boolean.keuken_control') }}"
@@ -150,12 +149,7 @@
         unique_id: douche_occupancy
         device_class: occupancy
         state: "{{ is_state('input_boolean.douche_occupancy_state', 'on') }}"
-        icon: >-
-          {% if is_state('binary_sensor.douche_occupancy', 'on') %}
-            mdi:account-box-multiple
-          {% else %}
-            mdi:account-box
-          {% endif %}
+        icon: "{{ iif(is_state('binary_sensor.douche_occupancy', 'on'), 'mdi:account-box-multiple', 'mdi:account-box') }}"
         attributes:
           input_boolean: "{{ states('input_boolean.douche_occupancy_state') }}"
 
@@ -168,12 +162,7 @@
              or is_state('input_boolean.badkamer_control', 'on')
              or is_state('input_boolean.douche_occupancy_state', 'on')
           }}
-        icon: >-
-          {% if is_state('binary_sensor.badkamer_occupancy', 'on') %}
-            mdi:account-box-multiple
-          {% else %}
-            mdi:account-box
-          {% endif %}
+        icon: "{{ iif(is_state('binary_sensor.badkamer_occupancy', 'on'), 'mdi:account-box-multiple', 'mdi:account-box') }}"
         attributes:
           motion_sensor: "{{ states('binary_sensor.badkamer_motion_sensor') }}"
           control_switch: "{{ states('input_boolean.badkamer_control') }}"
@@ -187,12 +176,7 @@
           {{ is_state('binary_sensor.kledingkamer_motion_sensor', 'on')
              or is_state('input_boolean.kledingkamer_control', 'on')
           }}
-        icon: >-
-          {% if is_state('binary_sensor.kledingkamer_occupancy', 'on') %}
-            mdi:account-box-multiple
-          {% else %}
-            mdi:account-box
-          {% endif %}
+        icon: "{{ iif(is_state('binary_sensor.kledingkamer_occupancy', 'on'), 'mdi:account-box-multiple', 'mdi:account-box') }}"
         attributes:
           motion_sensor: "{{ states('binary_sensor.kledingkamer_motion_sensor') }}"
           control_switch: "{{ states('input_boolean.kledingkamer_control') }}"
@@ -205,12 +189,7 @@
           {{ is_state('binary_sensor.studiekamer_motion_sensor', 'on')
              or is_state('input_boolean.studiekamer_control', 'on')
           }}
-        icon: >-
-          {% if is_state('binary_sensor.studiekamer_occupancy', 'on') %}
-            mdi:account-box-multiple
-          {% else %}
-            mdi:account-box
-          {% endif %}
+        icon: "{{ iif(is_state('binary_sensor.studiekamer_occupancy', 'on'), 'mdi:account-box-multiple', 'mdi:account-box') }}"
         attributes:
           motion_sensor: "{{ states('binary_sensor.studiekamer_motion_sensor') }}"
           control_switch: "{{ states('input_boolean.studiekamer_control') }}"
@@ -223,12 +202,7 @@
           {{ is_state('binary_sensor.slaapkamer_motion_sensor', 'on')
              or is_state('input_boolean.slaapkamer_control', 'on')
           }}
-        icon: >-
-          {% if is_state('binary_sensor.slaapkamer_occupancy', 'on') %}
-            mdi:account-box-multiple
-          {% else %}
-            mdi:account-box
-          {% endif %}
+        icon: "{{ iif(is_state('binary_sensor.slaapkamer_occupancy', 'on'), 'mdi:account-box-multiple', 'mdi:account-box') }}"
         attributes:
           motion_sensor: "{{ states('binary_sensor.slaapkamer_motion_sensor') }}"
           control_switch: "{{ states('input_boolean.slaapkamer_control') }}"
@@ -242,12 +216,7 @@
              or is_state('binary_sensor.west_zolder_motion_sensor', 'on')
              or is_state('input_boolean.zolder_control', 'on')
           }}
-        icon: >-
-          {% if is_state('binary_sensor.zolder_occupancy', 'on') %}
-            mdi:account-box-multiple
-          {% else %}
-            mdi:account-box
-          {% endif %}
+        icon: "{{ iif(is_state('binary_sensor.zolder_occupancy', 'on'), 'mdi:account-box-multiple', 'mdi:account-box') }}"
         attributes:
           oost_motion_sensor: "{{ states('binary_sensor.oost_zolder_motion_sensor') }}"
           west_motion_sensor: "{{ states('binary_sensor.west_zolder_motion_sensor') }}"
