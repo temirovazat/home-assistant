@@ -1,16 +1,14 @@
-#=== DEFAULT SETUP (FRONTEND, API, ETC) ===#
-default_config:
+# ██╗░░██╗░█████╗░███╗░░░███╗███████╗  ░█████╗░░██████╗░██████╗██╗░██████╗████████╗░█████╗░███╗░░██╗████████╗ #
+# ██║░░██║██╔══██╗████╗░████║██╔════╝  ██╔══██╗██╔════╝██╔════╝██║██╔════╝╚══██╔══╝██╔══██╗████╗░██║╚══██╔══╝ #
+# ███████║██║░░██║██╔████╔██║█████╗░░  ███████║╚█████╗░╚█████╗░██║╚█████╗░░░░██║░░░███████║██╔██╗██║░░░██║░░░ #
+# ██╔══██║██║░░██║██║╚██╔╝██║██╔══╝░░  ██╔══██║░╚═══██╗░╚═══██╗██║░╚═══██╗░░░██║░░░██╔══██║██║╚████║░░░██║░░░ #
+# ██║░░██║╚█████╔╝██║░╚═╝░██║███████╗  ██║░░██║██████╔╝██████╔╝██║██████╔╝░░░██║░░░██║░░██║██║░╚███║░░░██║░░░ #
+# ╚═╝░░╚═╝░╚════╝░╚═╝░░░░░╚═╝╚══════╝  ╚═╝░░╚═╝╚═════╝░╚═════╝░╚═╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝╚═╝░░╚══╝░░░╚═╝░░░ #
 
+# █▀▄ ▄▀█ ▀█▀ ▄▀█ █▄▄ ▄▀█ █▀ █▀▀ #
+# █▄▀ █▀█  █  █▀█ █▄█ █▀█ ▄█ ██▄ #
 
-#=== DATABASE ===#
-
-logger:
-  default: warning #critical
-#  logs:
-#    custom_components.tuya_v2: debug
-
-
-# History settings
+# MariaDB 7 day history
 recorder:
   db_url: !secret db_url
   purge_keep_days: 7
@@ -21,213 +19,34 @@ recorder:
       - switch.adaptive*
       - sensor.*battery*
 
+# █▀▀ █▀█ █▀▄▀█ █▀█ █▀█ █▄ █ █▀▀ █▄ █ ▀█▀ █▀ #
+# █▄▄ █▄█ █ ▀ █ █▀▀ █▄█ █ ▀█ ██▄ █ ▀█  █  ▄█ #
 
-#=== INCLUDES ===#
-
-# Home Assistant subdirectories to include
-frontend:
-  themes: !include_dir_merge_named themes
+# Core
+default_config:
 homeassistant:
   customize: !include customize.yaml
+frontend:
+  themes: !include_dir_merge_named themes
 automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
-python_script: # include pyton_scripts directory
+python_script:
 
-# Configuration subdirectories to include
-alarm_control_panel: !include security_system.yaml
-template: !include templates.yaml
-switch: !include switches.yaml
-climate: !include thermostats.yaml
-light: !include lights.yaml #light groups
-homekit: !include homekit.yaml
-calendar: !include calendars.yaml
-fan: !include fans.yaml
+# Templates
+sensor: !include components/sensors.yaml
+binary_sensor: !include components/booleans.yaml
+template: !include components/templates.yaml
+switch: !include components/switches.yaml
 
-
-#=== ADB ANDROID TV ===#
-
-# Sony Bravia TV
-media_player:
-  - platform: androidtv
-    host: 192.168.2.96
-    name: "Sony Bravia TV"
-    exclude_unnamed_apps: true
-    screencap: false
-    apps:
-      com.android.vending: "Google Play Store"
-      com.disney.disneyplus: "Disney+"
-      com.apple.atve.sony.appletv: "Apple TV+"
-      nl.rtl.videoland: "Videoland"
-
-#=== ALERTS ===#
-#(https://github.com/jcallaghan/home-assistant-config/issues/257)
-#alert:
-#  hvc_afhaal:
-#    name: HVC Container
-#    done_message: Container staat langs de weg
-#    entity_id: sensor.hvc_morgen
-#    state: "None"
-#    repeat: 60
-#    can_acknowledge: true
-#    skip_first: false
-#    notifiers:
-#      - mobile_app_iphone_a14
-
-
-#=== LOCK (NOTIFICATIONS) ===#
-
-lock:
-  - platform: template
-    name: Wasmachine Slot
-    value_template: >-
-      {{ is_state('sensor.wasmachine_washer_job_state', 'weightSensing')
-        or is_state('sensor.wasmachine_washer_job_state', 'wash')
-        or is_state('sensor.wasmachine_washer_job_state', 'rinse')
-        or is_state('sensor.wasmachine_washer_job_state', 'spin')
-      }}
-    lock:
-      service: switch.turn_on
-      target:
-        entity_id: switch.wasmachine
-    unlock:
-      service: switch.turn_off
-      target:
-        entity_id: switch.wasmachine
-
-
-#=== SENSORS ===#
-
-sensor:
-    # Versions
-  - platform: version
-  - platform: version
-    source: supervisor
-
-    # HVC afvalbeheer sensors
-  - platform: afvalbeheer
-    upcomingsensor: 1
-    wastecollector: HVC
-    resources:
-      - gft
-      - papier
-      - pmd
-    postcode: 8231JX
-    streetnumber: 12
-    dateobject: 1
-
-    # System monitor
-  - platform: uptime
-  - platform: systemmonitor
-    resources:
-      - type: memory_use_percent
-      - type: memory_use
-      - type: memory_free
-      - type: processor_use
-      - type: processor_temperature
-      - type: swap_use_percent
-      - type: disk_use_percent
-      - type: last_boot
-
-
-#=== TREND SENSORS ===#
-
-binary_sensor:
-  - platform: trend
-    sensors:
-      # 3 samples checking for a 10% change in 10 minutes (10/(60x10))
-      badkamer_hygrostat_on:
-        friendly_name: Badkamer Hygrostat Detected
-        device_class: moisture
-        max_samples: 3
-        entity_id: sensor.badkamer_humidity_multi_sensor
-        sample_duration: 600
-        min_gradient: 0.20 #was 0.10, before 0.01666
-
-      # 3 samples checking for a 5% change in 10 minutes (-5/(60x5))
-      badkamer_hygrostat_off:
-        friendly_name: Badkamer Hygrostat Cleared
-        max_samples: 3 # was 2, daarvoor 4 maar verlaagd omdat het te lang aanbleef.
-        entity_id: sensor.badkamer_humidity_multi_sensor
-        sample_duration: 600 #was 300
-        min_gradient: -0.008 #was -0.01666
-
-
-#=== COVERS ===#
-
-cover:
-    # Cover group for kitchen shades
-  - platform: group
-    name: Keuken Rolgordijnen
-    unique_id: ha_keuken_rolgordijnen
-    entities:
-      - cover.keuken_l
-      - cover.keuken_r
-
-    # Cover group for bedroom shades
-  - platform: group
-    name: Slaapkamer Rolgordijnen
-    unique_id: ha_slaapkamer_rolgordijnen
-    entities:
-      - cover.slaapkamer_l
-      - cover.slaapkamer_r
-
-  - platform: template
-    covers:
-      # Template cover for SwitchBot @ living room curtains (experimental)
-      woonkamer_gordijn:
-        unique_id: template_woonkamer_gordijn
-        device_class: curtain
-        friendly_name: "Woonkamer Gordijn"
-        availability_template: "{{ states('cover.woonkamer_switchbot') != 'unavailable' }}"
-        icon_template: >-
-          {% if is_state('cover.woonkamer_gordijn', 'open') %}
-            mdi:curtains
-          {% elif is_state('cover.woonkamer_gordijn', 'closed') %}
-            mdi:curtains-closed
-          {% endif %}
-        value_template: >-
-          {% if is_state('cover.woonkamer_switchbot', 'opening') %}
-            opening
-          {% elif is_state('cover.woonkamer_switchbot', 'closing') %}
-            closing
-          {% elif state_attr('cover.woonkamer_switchbot', 'current_position') >= 90 %}
-            open
-          {% elif state_attr('cover.woonkamer_switchbot', 'current_position') <= 10 %}
-            closed
-          {% endif %}
-        open_cover:
-          service: cover.open_cover
-          entity_id: cover.woonkamer_switchbot
-        close_cover:
-          service: cover.close_cover
-          entity_id: cover.woonkamer_switchbot
-
-      # Template cover for SwitchBot @ backdoor curtains (experimental)
-      achterdeur_gordijn:
-        unique_id: template_achterdeur_gordijn
-        device_class: curtain
-        friendly_name: "Achterdeur Gordijn"
-        availability_template: "{{ states('cover.achterdeur_switchbot') != 'unavailable' }}"
-        icon_template: >-
-          {% if is_state('cover.achterdeur_gordijn', 'open') %}
-            mdi:curtains
-          {% elif is_state('cover.achterdeur_gordijn', 'closed') %}
-            mdi:curtains-closed
-          {% endif %}
-        value_template: >-
-          {% if is_state('cover.achterdeur_switchbot', 'opening') %}
-            opening
-          {% elif is_state('cover.achterdeur_switchbot', 'closing') %}
-            closing
-          {% elif state_attr('cover.achterdeur_switchbot', 'current_position') >= 90 %}
-            open
-          {% elif state_attr('cover.achterdeur_switchbot', 'current_position') <= 10 %}
-            closed
-          {% endif %}
-        open_cover:
-          service: cover.open_cover
-          entity_id: cover.achterdeur_switchbot
-        close_cover:
-          service: cover.close_cover
-          entity_id: cover.achterdeur_switchbot
+# Components
+alarm_control_panel: !include components/security_system.yaml
+homekit: !include components/homekit.yaml
+light: !include components/lights.yaml
+cover: !include components/covers.yaml
+climate: !include components/thermostats.yaml
+fan: !include components/fans.yaml
+calendar: !include components/calendars.yaml
+media_player: !include components/media_players.yaml
+lock: !include components/locks.yaml
+# alert: !include components/alerts.yaml #(WIP)
