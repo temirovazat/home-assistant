@@ -20,6 +20,8 @@ recorder:
     entity_globs:
       - switch.adaptive*
       - sensor.*battery*
+    entities:
+      - script.dummy
 
 # █▀▀ █▀█ █▀▄▀█ █▀█ █▀█ █▄ █ █▀▀ █▄ █ ▀█▀ █▀ #
 # █▄▄ █▄█ █ ▀ █ █▀▀ █▄█ █ ▀█ ██▄ █ ▀█  █  ▄█ #
@@ -30,6 +32,9 @@ homeassistant:
   customize: !include customize.yaml
 frontend:
   themes: !include_dir_merge_named themes
+  extra_module_url:
+    - /hacsfiles/lovelace-card-mod/card-mod.js
+
 automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
@@ -51,6 +56,7 @@ fan: !include components/fans.yaml
 calendar: !include components/calendars.yaml
 media_player: !include components/media_players.yaml
 lock: !include components/locks.yaml
+group: !include components/groups.yaml
 # alert: !include components/alerts.yaml #(WIP)
 
 # Technical
