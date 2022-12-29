@@ -22,45 +22,44 @@
           service: switch.turn_off
           entity_id: switch.keuken_smart_plug
 
-    # Duux ThreeSixty on/off using Tuya hvac_mode 
-  - platform: template
-    switches:
-      threesixty:
-        friendly_name: Duux ThreeSixty Power
-        unique_id: duux_threesixty_power
-        icon_template: mdi:hvac
-        turn_on:
-          - service: climate.set_hvac_mode
-            data:
-              hvac_mode: 'auto'
-            entity_id: climate.tuya_threesixty_v2
-          - service: scene.turn_on
-            target:
-              entity_id: scene.threesixty_boost_mode
-        turn_off:
-          service: climate.set_hvac_mode
-          data:
-            hvac_mode: 'off'
-          entity_id: climate.tuya_threesixty_v2
-
-      # Fix for Zolder spots not applying adaptive lighting
-      zolder_nymane:
-        friendly_name: Zolder NYMÅNE
-        unique_id: zolder_nymane
-        value_template: "{{ is_state('light.zolder_groep', 'on') }}"
-        availability_template: "{{ states('light.zolder_groep') != 'unavailable' }}"
+      # Security cam @ woonkamer
+      security_cam:
+        friendly_name: Security Cam
+        unique_id: security_cam
+        value_template: "{{ is_state('switch.aqara_g2h', 'on') }}"
+        availability_template: "{{ states('switch.aqara_g2h') != 'unavailable' }}"
         icon_template: >-
-          {% if is_state('light.zolder_groep', 'on') %}
-            mdi:lightbulb-group
+          {% if is_state('switch.aqara_g2h', 'on') %}
+            mdi:webcam
           {% else %}
-            mdi:lightbulb-group-off
+            mdi:webcam-off
           {% endif %}
         turn_on:
-          service: light.turn_on
-          entity_id: light.zolder_groep
+          service: switch.turn_on
+          entity_id: switch.aqara_g2h
         turn_off:
-          service: light.turn_off
-          entity_id: light.zolder_groep
+          service: switch.turn_off
+          entity_id: switch.aqara_g2h
+
+    # Duux ThreeSixty on/off
+  - platform: template
+    switches:
+      duux_threesixty_power:
+        friendly_name: Duux ThreeSixty Power
+        unique_id: duux_threesixty_power
+        value_template: "{{ is_state('climate.tuya_duux_threesixty', 'heat') }}"
+        icon_template: mdi:hvac
+        turn_on:
+          - service: climate.turn_on
+            entity_id: climate.tuya_duux_threesixty
+          - service: select.select_option
+            target:
+              entity_id: select.tuya_duux_threesixty_temperature_level
+            data:
+              option: '3'
+        turn_off:
+          service: climate.turn_off
+          entity_id: climate.tuya_duux_threesixty
 
     # Adaptive Lighting for woonkamer area
   - platform: template
@@ -68,25 +67,21 @@
       begane_grond_adaptive_lighting:
         friendly_name: Begane Grond - Adaptive Lighting
         unique_id: adaptive_lighting_begane_grond
-        value_template: "{{ is_state('switch.adaptive_lighting_woonkamer', 'on') }}"
-        icon_template: >-
-          {% if is_state('switch.adaptive_lighting_woonkamer', 'on') %}
-            mdi:weather-sunny
-          {% else %}
-            mdi:weather-sunset
-          {% endif %}
+        icon_template: mdi:sun-wireless-outline
         turn_on:
-          - service: switch.turn_on
-            entity_id:
-              - switch.adaptive_lighting_woonkamer
-              - switch.adaptive_lighting_hue_filament
-              - switch.adaptive_lighting_ambient_lightstrip
+          - service: adaptive_lighting.set_manual_control
+            entity_id: switch.adaptive_lighting_woonkamer
+            data:
+              manual_control: false
+          - service: adaptive_lighting.set_manual_control
+            entity_id: switch.adaptive_lighting_filaments
+            data:
+              manual_control: false
         turn_off:
-          - service: switch.turn_off
-            entity_id:
-              - switch.adaptive_lighting_woonkamer
-              - switch.adaptive_lighting_hue_filament
-              - switch.adaptive_lighting_ambient_lightstrip
+          - service: adaptive_lighting.set_manual_control
+            entity_id: switch.adaptive_lighting_woonkamer
+          - service: adaptive_lighting.set_manual_control
+            entity_id: switch.adaptive_lighting_filaments
 
 # ▀█▀ █▀█ ▄▀█ █▀▀ █▄▀ █▀▀ █▀█ █▀ #
 #  █  █▀▄ █▀█ █▄▄ █ █ ██▄ █▀▄ ▄█ #
@@ -195,6 +190,10 @@
         turn_off:
           - service: light.turn_off
             entity_id: light.woonkamer_groep
+          - service: adaptive_lighting.apply
+            data:
+              entity_id: switch.adaptive_lighting_ambilight
+              lights: light.ambilight
           - service: switch.turn_on
             data_template:
               entity_id: >
@@ -203,6 +202,80 @@
                 {% else %}
                   switch.evening_state
                 {% endif %}
+
+# █ █ █▀█ █▀▄▀█ █▀▀   █▀█ █▀▀ █▀▀ █ █ █▀█ ▄▀█ █▄ █ █▀▀ █▄█ #
+# █▀█ █▄█ █ ▀ █ ██▄   █▄█ █▄▄ █▄▄ █▄█ █▀▀ █▀█ █ ▀█ █▄▄  █  #
+
+  - platform: template
+    switches:
+      # Switch for Home script
+      home_occupancy:
+        friendly_name: Home Occupancy
+        unique_id: switch_home_occupancy
+        icon_template: mdi:home
+        value_template: >-
+          {{ is_state('input_select.home_state_occupancy', 'Home') }}
+        turn_on:
+          - service: script.turn_on
+            entity_id: script.home_occupancy_home
+        turn_off:
+          - service: script.turn_off
+            entity_id: script.home_occupancy_home
+
+      # Switch for Sleeping script
+      sleeping_occupancy:
+        friendly_name: Sleeping Occupancy
+        unique_id: switch_sleeping_occupancy
+        icon_template: mdi:bell
+        value_template: >-
+          {{ is_state('input_select.home_state_occupancy', 'Sleeping') }}
+        turn_on:
+          - service: script.turn_on
+            entity_id: script.home_occupancy_sleeping
+        turn_off:
+          - service: script.turn_off
+            entity_id: script.home_occupancy_sleeping
+
+      # Switch for Away script
+      away_occupancy:
+        friendly_name: Away Occupancy
+        unique_id: switch_away_occupancy
+        icon_template: mdi:map-marker
+        value_template: >-
+          {{ is_state('input_select.home_state_occupancy', 'Away') 
+             or is_state('input_select.home_state_occupancy', 'On vacation')
+          }}
+        turn_on:
+          - service: script.turn_on
+            entity_id: script.home_occupancy_away
+        turn_off:
+          - service: script.turn_off
+            entity_id: script.home_occupancy_away
+
+      # Switch for On vacation Select
+      on_vacation_occupancy:
+        friendly_name: On vacation Occupancy
+        unique_id: switch_on_vacation_occupancy
+        icon_template: mdi:arrow-right-thick
+        value_template: >-
+          {{ is_state('switch.away_occupancy', 'on') 
+             and is_state('input_select.home_state_occupancy', 'On vacation')
+          }}
+        turn_on:
+          - service: script.turn_on
+            entity_id: script.home_occupancy_on_vacation
+        turn_off:
+          - service: script.turn_on
+            entity_id: script.home_occupancy_from_vacation
+          - service: switch.turn_on
+            data_template:
+              entity_id: >
+                {% if is_state("switch.away_occupancy", "on")%}
+                  switch.away_occupancy
+                {% else %}
+                  switch.home_occupancy
+                {% endif %}
+            
 
 # █ █ █▀█ █▀▄▀█ █▀▀   █▀ ▀█▀ ▄▀█ ▀█▀ █▀▀ █▀ #
 # █▀█ █▄█ █ ▀ █ ██▄   ▄█  █  █▀█  █  ██▄ ▄█ #
@@ -239,7 +312,6 @@
         icon_template: mdi:weather-sunny
         value_template: >-
           {{ is_state('input_select.home_state', 'Day')
-             and is_state('input_boolean.air_purifier', 'on')
              and is_state('cover.slaapkamer_rolgordijnen', 'open')
              and is_state('cover.keuken_rolgordijnen', 'open')
              }}
