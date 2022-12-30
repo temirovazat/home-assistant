@@ -64,6 +64,7 @@ def parse_service_call(data: dict):
     ):
         # fix for climate integrations which don't support setting hvac_mode and temperature together
         # add small delay between service calls for integrations that have a long processing time
+        # set temperature setpoint again for integrations which lose setpoint after switching hvac_mode
         service_call = [
             {
                 CONF_SERVICE: "{}.{}".format(CLIMATE_DOMAIN, SERVICE_SET_TEMPERATURE),
@@ -82,13 +83,27 @@ def parse_service_call(data: dict):
                     ATTR_HVAC_MODE: service_call[CONF_SERVICE_DATA][ATTR_HVAC_MODE]
                 },
             },
+            {
+                CONF_SERVICE: ACTION_WAIT,
+                ATTR_ENTITY_ID: service_call[ATTR_ENTITY_ID],
+                CONF_SERVICE_DATA: {CONF_DELAY: 5},
+            },
+            {
+                CONF_SERVICE: "{}.{}".format(CLIMATE_DOMAIN, SERVICE_SET_TEMPERATURE),
+                ATTR_ENTITY_ID: service_call[ATTR_ENTITY_ID],
+                CONF_SERVICE_DATA: {
+                    x: service_call[CONF_SERVICE_DATA][x]
+                    for x in service_call[CONF_SERVICE_DATA]
+                    if x != ATTR_HVAC_MODE
+                },
+            },
         ]
         return service_call
     else:
         return [service_call]
 
 
-def entity_is_available(hass: HomeAssistant, entity: str):
+def entity_is_available(hass: HomeAssistant, entity):
     """evaluate whether an entity is ready for targeting"""
     state = hass.states.get(entity)
     if state is None:
@@ -125,6 +140,13 @@ def validate_condition(hass: HomeAssistant, condition: dict):
     required = condition[const.ATTR_VALUE]
     actual = state.state if state else None
 
+    if condition[const.ATTR_MATCH_TYPE] in [
+        const.MATCH_TYPE_BELOW,
+        const.MATCH_TYPE_ABOVE,
+    ] and isinstance(required, str):
+        # parse condition as numeric if should be smaller or larger than X
+        required = float(required)
+
     if isinstance(required, int):
         try:
             actual = int(float(actual))
@@ -156,11 +178,48 @@ def validate_condition(hass: HomeAssistant, condition: dict):
     return result
 
 
+def action_has_effect(action: dict, hass: HomeAssistant):
+    """check if action has an effect on the entity"""
+    if ATTR_ENTITY_ID not in action:
+        return True
+
+    domain = action[CONF_SERVICE].split(".").pop(0)
+    service = action[CONF_SERVICE].split(".").pop(1)
+    state = hass.states.get(action[ATTR_ENTITY_ID])
+    current_state = state.state if state else None
+
+    if domain == CLIMATE_DOMAIN:
+        if service == SERVICE_SET_HVAC_MODE:
+            return action[CONF_SERVICE_DATA][ATTR_HVAC_MODE] != current_state
+        elif service == SERVICE_SET_TEMPERATURE:
+            if (
+                ATTR_HVAC_MODE in action[CONF_SERVICE_DATA]
+                and action[CONF_SERVICE_DATA].get(ATTR_HVAC_MODE) != current_state
+            ):
+                return True
+            elif ATTR_TEMPERATURE in action[CONF_SERVICE_DATA]:
+                return float(state.attributes.get(ATTR_TEMPERATURE)) != float(
+                    action[CONF_SERVICE_DATA].get(ATTR_TEMPERATURE)
+                )
+            elif (
+                ATTR_TARGET_TEMP_LOW in action[CONF_SERVICE_DATA]
+                and ATTR_TARGET_TEMP_HIGH in action[CONF_SERVICE_DATA]
+            ):
+                return float(state.attributes.get(ATTR_TARGET_TEMP_LOW)) != float(
+                    action[CONF_SERVICE_DATA].get(ATTR_TARGET_TEMP_LOW)
+                ) or float(state.attributes.get(ATTR_TARGET_TEMP_HIGH)) != float(
+                    action[CONF_SERVICE_DATA].get(ATTR_TARGET_TEMP_HIGH)
+                )
+
+    return True
+
+
 class ActionHandler:
     def __init__(self, hass: HomeAssistant, schedule_id: str):
         """init"""
         self.hass = hass
         self._queues = {}
+        self._timer = None
         self.id = schedule_id
 
         async_dispatcher_connect(
@@ -174,13 +233,15 @@ class ActionHandler:
         conditions = data[CONF_CONDITIONS]
         actions = [e for x in data[const.ATTR_ACTIONS] for e in parse_service_call(x)]
         condition_type = data[const.ATTR_CONDITION_TYPE]
+        track_conditions = data[const.ATTR_TRACK_CONDITIONS]
 
+        # create an ActionQueue object per targeted entity (such that the tasks are handled independently)
         for action in actions:
             entity = action[ATTR_ENTITY_ID] if ATTR_ENTITY_ID in action else "none"
 
             if entity not in self._queues:
                 self._queues[entity] = ActionQueue(
-                    self.hass, self.id, conditions, condition_type
+                    self.hass, self.id, conditions, condition_type, track_conditions
                 )
 
             self._queues[entity].add_action(action)
@@ -188,60 +249,94 @@ class ActionHandler:
         for queue in self._queues.values():
             await queue.async_start()
 
-    async def async_cleanup_queues(self, id: str):
+    async def async_cleanup_queues(self, id: str = None):
         """remove all objects from queue which have no remaining tasks"""
-        if id != self.id:
+        if id is not None and id != self.id or not len(self._queues.keys()):
             return
 
+        # remove all items which are either finished executing
+        # or have all their entities available (i.e. conditions have failed beforee)
         queue_items = list(self._queues.keys())
         for key in queue_items:
-            if self._queues[key].is_finished():
+            if self._queues[key].is_finished() or (
+                self._queues[key].is_available() and not self._queues[key].queue_busy
+            ):
                 await self._queues[key].async_clear()
                 self._queues.pop(key)
 
         if not len(self._queues.keys()):
-            _LOGGER.debug("[{}]: finished execution of actions".format(self.id))
+            _LOGGER.debug("[{}]: Finished execution of actions".format(self.id))
 
-    async def async_empty_queue(self):
+    async def async_empty_queue(self, **kwargs):
         """remove all objects from queue"""
+        restore_time = kwargs.get("restore_time")
 
-        while len(self._queues.keys()):
-            key = list(self._queues.keys())[0]
-            await self._queues[key].async_clear()
-            self._queues.pop(key)
+        async def async_clear_queue(_now=None):
+            """clear queue"""
+            if self._timer:
+                self._timer()
+                self._timer = None
+
+            while len(self._queues.keys()):
+                key = list(self._queues.keys())[0]
+                await self._queues[key].async_clear()
+                self._queues.pop(key)
+
+        if restore_time:
+            await self.async_cleanup_queues()
+            if not len(self._queues):
+                return
+
+            _LOGGER.debug(
+                "Waiting for unavailable entities to be restored for {} mins".format(
+                    restore_time
+                )
+            )
+            self._timer = async_call_later(
+                self.hass, restore_time * 60, async_clear_queue
+            )
+        else:
+            await async_clear_queue()
 
 
 class ActionQueue:
     def __init__(
-        self, hass: HomeAssistant, id: str, conditions: list, condition_type: str
+        self,
+        hass: HomeAssistant,
+        id: str,
+        conditions: list,
+        condition_type: str,
+        track_conditions: bool,
     ):
         """create a new action queue"""
         self.hass = hass
         self.id = id
         self._timer = None
-        self._entities = []
-        self._entity_tracker = None
+        self._action_entities = []
+        self._condition_entities = []
+        self._listeners = []
         self._conditions = conditions
         self._condition_type = condition_type
         self._queue = []
-        self._queue_busy = False
-        self._startup_callback = None
+        self.queue_busy = False
+        self._track_conditions = track_conditions
+        self._wait_for_available = True
 
         for condition in conditions:
             if (
                 ATTR_ENTITY_ID in condition
-                and condition[ATTR_ENTITY_ID] not in self._entities
+                and condition[ATTR_ENTITY_ID] not in self._condition_entities
             ):
-                self._entities.append(condition[ATTR_ENTITY_ID])
+                self._condition_entities.append(condition[ATTR_ENTITY_ID])
 
     def add_action(self, action: dict):
         """add an action to the queue"""
         if (
             ATTR_ENTITY_ID in action
             and action[ATTR_ENTITY_ID]
-            and action[ATTR_ENTITY_ID] not in self._entities
+            and action[ATTR_ENTITY_ID] not in self._action_entities
         ):
-            self._entities.append(action[ATTR_ENTITY_ID])
+            self._action_entities.append(action[ATTR_ENTITY_ID])
 
         self._queue.append(action)
 
@@ -249,30 +344,39 @@ class ActionQueue:
         """start execution of the actions in the queue"""
 
         @callback
-        async def async_entity_changed(entity, _old_state, _new_state):
+        async def async_entity_changed(entity, old_state, new_state):
             """check if actions can be processed"""
 
-            if self._queue_busy:
+            if self.queue_busy:
+                return
+
+            if entity not in self._condition_entities and not self._wait_for_available:
+                # only watch until entity becomes available in the action entities
                 return
 
             _LOGGER.debug(
-                "[{}]: state of {} has changed, re-evaluating actions".format(
+                "[{}]: State of {} has changed, re-evaluating actions".format(
                     self.id, entity
                 )
             )
             await self.async_process_queue()
 
-        if len(self._entities):
-            self._entity_tracker = async_track_state_change(
-                self.hass, self._entities, async_entity_changed
+        watched_entities = list(set(self._condition_entities + self._action_entities))
+        if len(watched_entities):
+            self._listeners.append(
+                async_track_state_change(
+                    self.hass, watched_entities, async_entity_changed
+                )
             )
 
         await self.async_process_queue()
 
         # trigger the queue once when HA has restarted
         if self.hass.state != CoreState.running:
-            self._startup_callback = async_dispatcher_connect(
-                self.hass, const.EVENT_STARTED, self.async_process_queue
+            self._listeners.append(
+                async_dispatcher_connect(
+                    self.hass, const.EVENT_STARTED, self.async_process_queue
+                )
             )
 
     async def async_clear(self):
@@ -281,71 +385,57 @@ class ActionQueue:
             self._timer()
         self._timer = None
 
-        if self._entity_tracker:
-            self._entity_tracker()
-        self._entity_tracker = None
-
-        if self._startup_callback:
-            self._startup_callback()
-        self._startup_callback = None
+        while len(self._listeners):
+            self._listeners.pop()()
 
     def is_finished(self):
         """check whether all queue items are finished"""
         return len(self._queue) == 0
 
-    async def async_process_queue(self):
+    def is_available(self):
+        """check if all services and entities involved in the task are available"""
+
+        # check services
+        required_services = [action[CONF_SERVICE] for action in self._queue]
+        failed_service = next(
+            (x for x in required_services if not service_is_available(self.hass, x)),
+            None,
+        )
+        if failed_service:
+            _LOGGER.debug(
+                "[{}]: Service {} is unavailable, scheduled action cannot be executed".format(
+                    self.id, failed_service
+                )
+            )
+            return False
+
+        # check entities
+        watched_entities = list(set(self._condition_entities + self._action_entities))
+        failed_entity = next(
+            (x for x in watched_entities if not entity_is_available(self.hass, x)), None
+        )
+        if failed_entity:
+            _LOGGER.debug(
+                "[{}]: Entity {} is unavailable, scheduled action cannot be executed".format(
+                    self.id, failed_entity
+                )
+            )
+            return False
+
+        if self._wait_for_available:
+            self._wait_for_available = False
+
+        return True
+
+    async def async_process_queue(self, task_idx=0):
         """walk through the list of tasks and execute the ones that are ready"""
-        if self._queue_busy:
+        if self.queue_busy or not self.is_available():
             return
 
-        i = 0
-        while i < len(self._queue):
-            self._queue_busy = True
-            action = self._queue[i]
-
-            # create a list of entities which are involved in the current task
-            entities = []
-            if ATTR_ENTITY_ID in action and action[ATTR_ENTITY_ID]:
-                entities.append(action[ATTR_ENTITY_ID])
-
-            for condition in self._conditions:
-                if ATTR_ENTITY_ID in condition:
-                    entities.append(condition[ATTR_ENTITY_ID])
-
-            unavailable_entities = [
-                x for x in entities if not entity_is_available(self.hass, x)
-            ]
-            if not service_is_available(self.hass, action[CONF_SERVICE]):
-                i += 1
-                _LOGGER.debug(
-                    "[{}]: service {} is unavailable, action is postponed".format(
-                        self.id, action[CONF_SERVICE]
-                    )
-                )
-            elif len(unavailable_entities) > 0:
-                i += 1
-                _LOGGER.debug(
-                    "[{}]: {} is unavailable, action {} is postponed".format(
-                        self.id, ", ".join(unavailable_entities), action[CONF_SERVICE]
-                    )
-                )
-            else:
-                # all entities are available, execute the task
-                success = await self.async_execute_action(action)
-                if success:
-                    self._queue.pop(i)
-
-            if self._queue_busy:
-                break
-
-        if not len(self._queue):
-            async_dispatcher_send(self.hass, "action_queue_finished", self.id)
-
-    async def async_execute_action(self, service_call: dict):
-        """execute a scheduled action"""
+        self.queue_busy = True
 
         # verify conditions
-        result = (
+        conditions_passed = (
             (
                 all(validate_condition(self.hass, item) for item in self._conditions)
                 if self._condition_type == const.CONDITION_TYPE_AND
@@ -357,51 +447,79 @@ class ActionQueue:
             else True
         )
 
-        if not result:
+        if not conditions_passed and len(self._queue):
             _LOGGER.debug(
-                "[{}]: conditions have failed, skipping execution of action {}".format(
-                    self.id,
-                    service_call[CONF_SERVICE],
+                "[{}]: Conditions have failed, skipping execution of actions".format(
+                    self.id
                 )
             )
-            return False
+            if self._track_conditions:
+                # postpone tasks
+                self.queue_busy = False
+                return
 
-        if service_call[CONF_SERVICE] == ACTION_WAIT:
-            self.start_timer(service_call[CONF_SERVICE_DATA][CONF_DELAY])
-            return True
+            else:
+                # abort all items in queue
+                while len(self._queue):
+                    self._queue.pop()
 
-        if ATTR_ENTITY_ID in service_call:
-            _LOGGER.debug(
-                "[{}]: Executing service {} on entity {}".format(
-                    self.id, service_call[CONF_SERVICE], service_call[ATTR_ENTITY_ID]
+        skip_action = False
+
+        while task_idx < len(self._queue):
+            action = self._queue[task_idx]
+
+            if action[CONF_SERVICE] == ACTION_WAIT:
+                if skip_action:
+                    task_idx = task_idx + 1
+                    continue
+
+                @callback
+                async def async_timer_finished(_now):
+                    self._timer = None
+                    self.queue_busy = False
+                    await self.async_process_queue(task_idx + 1)
+
+                self._timer = async_call_later(
+                    self.hass,
+                    action[CONF_SERVICE_DATA][CONF_DELAY],
+                    async_timer_finished,
                 )
-            )
+                _LOGGER.debug(
+                    "[{}]: Postponing next action for {} seconds".format(
+                        self.id, action[CONF_SERVICE_DATA][CONF_DELAY]
+                    )
+                )
+                return
+
+            if ATTR_ENTITY_ID in action:
+                _LOGGER.debug(
+                    "[{}]: Executing service {} on entity {}".format(
+                        self.id, action[CONF_SERVICE], action[ATTR_ENTITY_ID]
+                    )
+                )
+            else:
+                _LOGGER.debug(
+                    "[{}]: Executing service {}".format(self.id, action[CONF_SERVICE])
+                )
+
+            skip_action = not action_has_effect(action, self.hass)
+            if skip_action:
+                _LOGGER.debug("[{}]: Action has no effect, skipping".format(self.id))
+            else:
+                await async_call_from_config(
+                    self.hass,
+                    action,
+                )
+            task_idx = task_idx + 1
+
+        self.queue_busy = False
+
+        if not self._track_conditions or not len(self._conditions):
+            while len(self._queue):
+                self._queue.pop()
+
+            async_dispatcher_send(self.hass, "action_queue_finished", self.id)
         else:
             _LOGGER.debug(
-                "[{}]: Executing service {}".format(self.id, service_call[CONF_SERVICE])
+                "[{}]: Done for now, Waiting for conditions to change".format(self.id)
             )
-
-        if service_call[CONF_SERVICE] == ACTION_WAIT:
-            self.start_timer(service_call[CONF_SERVICE_DATA][CONF_DELAY])
-
-        await async_call_from_config(
-            self.hass,
-            service_call,
-        )
-        self._queue_busy = False
-
-        return True
-
-    def start_timer(self, delay: int):
-        """start a timer for postponing remaining tasks in the queue"""
-
-        @callback
-        async def async_timer_finished(_now):
-            self._timer = None
-            self._queue_busy = False
-            await self.async_process_queue()
-
-        self._timer = async_call_later(self.hass, delay, async_timer_finished)
-        _LOGGER.debug(
-            "[{}]: Postponing next action for {} seconds".format(self.id, delay)
-        )
