@@ -20,7 +20,7 @@ from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import ToggleEntity
+from homeassistant.helpers.entity import EntityCategory, ToggleEntity
 from homeassistant.helpers.event import async_call_later
 from homeassistant.util import slugify
 
@@ -312,9 +312,9 @@ class ScheduleEntity(ToggleEntity):
         return "mdi:calendar-clock"
 
     @property
-    def entity_category(self):
-        """Return entity_category."""
-        return "config"
+    def EntityCategory(self):
+        """Return EntityCategory."""
+        return EntityCategory.CONFIG
 
     @property
     def weekdays(self):
