@@ -1,0 +1,3 @@
+[bandit]
+exclude: test_*.py,./venv/,./env/,./node_modules/,./cacheback/,./.env,./.venv
+skips: B101,B311,B308,B703,B413,B324
