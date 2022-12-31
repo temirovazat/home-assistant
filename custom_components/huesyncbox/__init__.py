@@ -14,6 +14,9 @@ from homeassistant.helpers.config_validation import make_entity_service_schema
 from homeassistant.helpers.service import async_extract_entity_ids
 
 from .const import (
+    ATTR_BRIDGE_CLIENTKEY,
+    ATTR_BRIDGE_ID,
+    ATTR_BRIDGE_USERNAME,
     ATTR_ENTERTAINMENT_AREA,
     ATTR_INPUT,
     ATTR_INPUT_NEXT,
@@ -31,6 +34,7 @@ from .const import (
     INTENSITIES,
     LOGGER,
     MODES,
+    SERVICE_SET_BRIDGE,
     SERVICE_SET_BRIGHTNESS,
     SERVICE_SET_ENTERTAINMENT_AREA,
     SERVICE_SET_INTENSITY,
@@ -86,6 +90,14 @@ HUESYNCBOX_SET_INTENSITY_SCHEMA = make_entity_service_schema(
 
 HUESYNCBOX_SET_ENTERTAINMENT_AREA_SCHEMA = make_entity_service_schema(
     {vol.Required(ATTR_ENTERTAINMENT_AREA): cv.string}
+)
+
+HUESYNCBOX_SET_BRIDGE_SCHEMA = make_entity_service_schema(
+    {
+        vol.Required(ATTR_BRIDGE_ID): cv.string,
+        vol.Required(ATTR_BRIDGE_USERNAME): cv.string,
+        vol.Required(ATTR_BRIDGE_CLIENTKEY): cv.string,
+    }
 )
 
 services_registered = False
@@ -233,6 +245,23 @@ async def async_register_services(hass: HomeAssistant):
         schema=HUESYNCBOX_SET_ENTERTAINMENT_AREA_SCHEMA,
     )
 
+    async def async_set_bridge(call):
+        entity_ids = await async_extract_entity_ids(hass, call)
+        for _, entry in hass.data[DOMAIN].items():
+            if entry.entity and entry.entity.entity_id in entity_ids:
+                await entry.entity.async_set_bridge(
+                    call.data.get(ATTR_BRIDGE_ID),
+                    call.data.get(ATTR_BRIDGE_USERNAME),
+                    call.data.get(ATTR_BRIDGE_CLIENTKEY),
+                )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SET_BRIDGE,
+        async_set_bridge,
+        schema=HUESYNCBOX_SET_BRIDGE_SCHEMA,
+    )
+
 
 async def async_unregister_services(hass):
     hass.services.async_remove(DOMAIN, SERVICE_SET_SYNC_STATE)
@@ -240,3 +269,4 @@ async def async_unregister_services(hass):
     hass.services.async_remove(DOMAIN, SERVICE_SET_MODE)
     hass.services.async_remove(DOMAIN, SERVICE_SET_INTENSITY)
     hass.services.async_remove(DOMAIN, SERVICE_SET_ENTERTAINMENT_AREA)
+    hass.services.async_remove(DOMAIN, SERVICE_SET_BRIDGE)

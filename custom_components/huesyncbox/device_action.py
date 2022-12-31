@@ -49,7 +49,8 @@ from .const import (
 SERVICE = "service"
 SERVICE_DATA = "service_data"
 
-# List of device actions is derived from the available actions for the Philips Hue Play HDMI Sync Box in the Logitech Harmony
+# List of device actions is derived from the available actions for
+# the Philips Hue Play HDMI Sync Box in the Logitech Harmony
 ACTION_TYPES = {
     "brightness_decrease": {
         SERVICE: SERVICE_SET_SYNC_STATE,

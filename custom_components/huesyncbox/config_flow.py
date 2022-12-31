@@ -3,13 +3,12 @@ from __future__ import annotations
 
 import textwrap
 
-from voluptuous import Required, Schema
-
 from homeassistant import config_entries
 from homeassistant.components import zeroconf
 from homeassistant.const import CONF_IP_ADDRESS, CONF_UNIQUE_ID
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.typing import ConfigType
+from voluptuous import Required, Schema
 
 from .const import DOMAIN, LOGGER  # pylint:disable=unused-import
 from .errors import AuthenticationRequired, CannotConnect
