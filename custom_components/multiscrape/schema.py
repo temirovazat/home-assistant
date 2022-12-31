@@ -47,7 +47,7 @@ from .const import (
     CONF_FORM_SELECT,
     CONF_FORM_SUBMIT,
     CONF_FORM_SUBMIT_ONCE,
-    CONF_INDEX,
+    CONF_LOG_RESPONSE,
     CONF_ON_ERROR,
     CONF_ON_ERROR_DEFAULT,
     CONF_ON_ERROR_LOG,
@@ -101,6 +101,7 @@ INTEGRATION_SCHEMA = {
     vol.Optional(CONF_PARSER, default=DEFAULT_PARSER): cv.string,
     vol.Optional(CONF_NAME): cv.string,
     vol.Optional(CONF_SCAN_INTERVAL): cv.time_period,
+    vol.Optional(CONF_LOG_RESPONSE, default=False): cv.boolean,
 }
 
 ON_ERROR_SCHEMA = {
@@ -121,7 +122,6 @@ SELECTOR_SCHEMA = {
     vol.Optional(CONF_SELECT): cv.template,
     vol.Optional(CONF_SELECT_LIST): cv.template,
     vol.Optional(CONF_ATTR): cv.string,
-    vol.Optional(CONF_INDEX, default=0): cv.positive_int,
     vol.Optional(CONF_VALUE_TEMPLATE): cv.template,
     vol.Optional(CONF_ON_ERROR): vol.Schema(ON_ERROR_SCHEMA),
 }
