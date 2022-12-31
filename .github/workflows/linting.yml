@@ -1,12 +1,8 @@
 name: Code Linting
 
 on:
-  push:
-    branches:
-      - "*"
-
   schedule:
-  - cron: "0 0 * * *"
+    - cron: '0 */6 * * *'
 
 jobs:
   black:
