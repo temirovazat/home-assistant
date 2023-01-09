@@ -73,3 +73,6 @@ Additionally, there are a couple of **Modes** which can be manually turned on de
 - 🍿 ``Cinema Mode`` ensures the ideal movie watching experience, by turning on the tv, closing the curtains and turning off or dimming certain lights
 - 🎉 ``Party Mode`` ensures no automations are run that interfere with guests, like curtains opening, alarms triggering or lights dimming
 - 👀 ``Privacy Mode`` ensures the living room is secured against prying eyes from outside, by closing the curtains, dimming lights, disabling camera's and playing music
+
+### Project Status
+![Alt](https://repobeats.axiom.co/api/embed/2bad920abea718dd9dbfba90d1d420e42358a044.svg "Repobeats analytics image")
